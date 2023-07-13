@@ -20,6 +20,7 @@
   "dependencies": {
     "cross-fetch": "^4.0.0-alpha.5",
     "headers-polyfill": "^3.1.2",
+    "https-proxy-agent": "7.0.1",
     "json-stable-stringify": "^1.0.2",
     "set-cookie-parser": "^2.6.0",
     "tough-cookie": "^4.1.2",

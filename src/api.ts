@@ -1,5 +1,6 @@
 import { TwitterAuth } from './auth';
 import { ApiError } from './errors';
+import { getProxyAgent } from './proxy';
 import { updateCookieJar } from './requests';
 import { Headers } from 'headers-polyfill';
 import fetch from 'cross-fetch';
@@ -36,6 +37,10 @@ export async function requestApi<T>(
       res = await fetch(url, {
         method,
         headers,
+
+        //eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        //@ts-ignore
+        agent: getProxyAgent(),
       });
     } catch (err) {
       if (!(err instanceof Error)) {
