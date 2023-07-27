@@ -1,6 +1,13 @@
 import { CookieJar } from 'tough-cookie';
 import { Headers } from 'headers-polyfill';
+import fetch from 'cross-fetch';
+import { FetchTransformOptions } from './api';
+export interface TwitterAuthOptions {
+    fetch: typeof fetch;
+    transform: Partial<FetchTransformOptions>;
+}
 export interface TwitterAuth {
+    fetch: typeof fetch;
     /**
      * Returns the current cookie jar.
      */
@@ -46,11 +53,13 @@ export interface TwitterAuth {
  * A guest authentication token manager. Automatically handles token refreshes.
  */
 export declare class TwitterGuestAuth implements TwitterAuth {
+    protected readonly options?: Partial<TwitterAuthOptions> | undefined;
     protected bearerToken: string;
     protected jar: CookieJar;
     protected guestToken?: string;
     protected guestCreatedAt?: Date;
-    constructor(bearerToken: string);
+    fetch: typeof fetch;
+    constructor(bearerToken: string, options?: Partial<TwitterAuthOptions> | undefined);
     cookieJar(): CookieJar;
     isLoggedIn(): Promise<boolean>;
     login(_username: string, _password: string, _email?: string): Promise<void>;

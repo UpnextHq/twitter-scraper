@@ -19,7 +19,8 @@ class Scraper {
      * - Scrapers maintain their own guest tokens for Twitter's internal API.
      * - Reusing Scraper objects is recommended to minimize the time spent authenticating unnecessarily.
      */
-    constructor() {
+    constructor(options) {
+        this.options = options;
         this.token = api_1.bearerToken;
         this.useGuestAuth();
     }
@@ -29,8 +30,8 @@ class Scraper {
      * @internal
      */
     useGuestAuth() {
-        this.auth = new auth_1.TwitterGuestAuth(this.token);
-        this.authTrends = new auth_1.TwitterGuestAuth(this.token);
+        this.auth = new auth_1.TwitterGuestAuth(this.token, this.getAuthOptions());
+        this.authTrends = new auth_1.TwitterGuestAuth(this.token, this.getAuthOptions());
     }
     /**
      * Fetches a Twitter profile.
@@ -118,13 +119,45 @@ class Scraper {
         return (0, tweets_1.getTweetsByUserId)(userId, maxTweets, this.auth);
     }
     /**
+     * Fetches the first tweet matching the given query.
+     *
+     * Example:
+     * ```js
+     * const timeline = getTweets("user", 200)
+     * const retweets = await getTweetsWhere({ isRetweet: true }, timeline);
+     * ```
+     * @param query A set of key/value pairs to test **all** tweets against.
+     * - All keys are optional.
+     * - If specified, the key must be implemented by that of {@link Tweet}.
+     * @param tweets The {@link AsyncGenerator} of tweets to search through.
+     */
+    getTweetWhere(tweets, query) {
+        return (0, tweets_1.getTweetWhere)(tweets, query);
+    }
+    /**
+     * Fetches all tweets matching the given query.
+     *
+     * Example:
+     * ```js
+     * const timeline = getTweets("user", 200)
+     * const retweets = await getTweetsWhere({ isRetweet: true }, timeline);
+     * ```
+     * @param query A set of key/value pairs to test **all** tweets against.
+     * - All keys are optional.
+     * - If specified, the key must be implemented by that of {@link Tweet}.
+     * @param tweets The {@link AsyncGenerator} of tweets to search through.
+     */
+    getTweetsWhere(tweets, query) {
+        return (0, tweets_1.getTweetsWhere)(tweets, query);
+    }
+    /**
      * Fetches the most recent tweet from a Twitter user.
      * @param user The user whose latest tweet should be returned.
      * @param includeRetweets Whether or not to include retweets. Defaults to `false`.
      * @returns The {@link Tweet} object or `null`/`undefined` if it couldn't be fetched.
      */
-    getLatestTweet(user, includeRetweets = false) {
-        return (0, tweets_1.getLatestTweet)(user, includeRetweets, this.auth);
+    getLatestTweet(user, includeRetweets = false, max = 200) {
+        return (0, tweets_1.getLatestTweet)(user, includeRetweets, max, this.auth);
     }
     /**
      * Fetches a single tweet.
@@ -157,7 +190,7 @@ class Scraper {
      */
     async login(username, password, email) {
         // Swap in a real authorizer for all requests
-        const userAuth = new auth_user_1.TwitterUserAuth(this.token);
+        const userAuth = new auth_user_1.TwitterUserAuth(this.token, this.getAuthOptions());
         await userAuth.login(username, password, email);
         this.auth = userAuth;
         this.authTrends = userAuth;
@@ -183,7 +216,7 @@ class Scraper {
      * @param cookies The cookies to set for the current session.
      */
     async setCookies(cookies) {
-        const userAuth = new auth_user_1.TwitterUserAuth(this.token);
+        const userAuth = new auth_user_1.TwitterUserAuth(this.token, this.getAuthOptions());
         for (const cookie of cookies) {
             await userAuth.cookieJar().setCookie(cookie, twUrl);
         }
@@ -218,6 +251,12 @@ class Scraper {
     withXCsrfToken(_token) {
         console.warn('Warning: Scraper#withXCsrfToken is deprecated and will be removed in a later version.');
         return this;
+    }
+    getAuthOptions() {
+        return {
+            fetch: this.options?.fetch,
+            transform: this.options?.transform,
+        };
     }
     handleResponse(res) {
         if (!res.success) {

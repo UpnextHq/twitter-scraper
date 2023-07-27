@@ -1,10 +1,10 @@
-import { TwitterGuestAuth } from './auth';
+import { TwitterAuthOptions, TwitterGuestAuth } from './auth';
 import { Headers } from 'headers-polyfill';
 /**
  * A user authentication token manager.
  */
 export declare class TwitterUserAuth extends TwitterGuestAuth {
-    constructor(bearerToken: string);
+    constructor(bearerToken: string, options?: Partial<TwitterAuthOptions>);
     isLoggedIn(): Promise<boolean>;
     login(username: string, password: string, email?: string): Promise<void>;
     logout(): Promise<void>;

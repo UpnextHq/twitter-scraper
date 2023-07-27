@@ -64,9 +64,12 @@ export interface Tweet {
     views?: number;
     sensitiveContent?: boolean;
 }
+export type TweetQuery = Partial<Tweet> | ((tweet: Tweet) => boolean | Promise<boolean>);
 export declare function fetchTweets(userId: string, maxTweets: number, cursor: string | undefined, auth: TwitterAuth): Promise<QueryTweetsResponse>;
 export declare function getTweets(user: string, maxTweets: number, auth: TwitterAuth): AsyncGenerator<Tweet, void>;
 export declare function getTweetsByUserId(userId: string, maxTweets: number, auth: TwitterAuth): AsyncGenerator<Tweet, void>;
-export declare function getLatestTweet(user: string, includeRetweets: boolean, auth: TwitterAuth): Promise<Tweet | null | void>;
+export declare function getTweetWhere(tweets: AsyncIterable<Tweet>, query: TweetQuery): Promise<Tweet | null>;
+export declare function getTweetsWhere(tweets: AsyncIterable<Tweet>, query: TweetQuery): Promise<Tweet[]>;
+export declare function getLatestTweet(user: string, includeRetweets: boolean, max: number, auth: TwitterAuth): Promise<Tweet | null | void>;
 export declare function getTweet(id: string, auth: TwitterAuth): Promise<Tweet | null>;
 //# sourceMappingURL=tweets.d.ts.map

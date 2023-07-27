@@ -1,7 +1,4 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TwitterUserAuth = void 0;
 const auth_1 = require("./auth");
@@ -9,13 +6,12 @@ const api_1 = require("./api");
 const tough_cookie_1 = require("tough-cookie");
 const requests_1 = require("./requests");
 const headers_polyfill_1 = require("headers-polyfill");
-const cross_fetch_1 = __importDefault(require("cross-fetch"));
 /**
  * A user authentication token manager.
  */
 class TwitterUserAuth extends auth_1.TwitterGuestAuth {
-    constructor(bearerToken) {
-        super(bearerToken);
+    constructor(bearerToken, options) {
+        super(bearerToken, options);
     }
     async isLoggedIn() {
         const res = await (0, api_1.requestApi)('https://api.twitter.com/1.1/account/verify_credentials.json', this);
@@ -155,7 +151,7 @@ class TwitterUserAuth extends auth_1.TwitterGuestAuth {
             'x-twitter-active-user': 'yes',
             'x-twitter-client-language': 'en',
         });
-        const res = await (0, cross_fetch_1.default)(onboardingTaskUrl, {
+        const res = await this.fetch(onboardingTaskUrl, {
             method: 'POST',
             headers: headers,
             body: JSON.stringify(data),

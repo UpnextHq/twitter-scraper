@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getTweet = exports.getLatestTweet = exports.getTweetsByUserId = exports.getTweets = exports.fetchTweets = void 0;
+exports.getTweet = exports.getLatestTweet = exports.getTweetsWhere = exports.getTweetWhere = exports.getTweetsByUserId = exports.getTweets = exports.fetchTweets = void 0;
 const api_1 = require("./api");
 const profile_1 = require("./profile");
 const timeline_v2_1 = require("./timeline-v2");
@@ -58,18 +58,43 @@ function getTweetsByUserId(userId, maxTweets, auth) {
     });
 }
 exports.getTweetsByUserId = getTweetsByUserId;
-async function getLatestTweet(user, includeRetweets, auth) {
-    const max = includeRetweets ? 1 : 200;
-    const timeline = getTweets(user, max, auth);
-    if (max == 1) {
-        return (await timeline.next()).value;
-    }
-    for await (const tweet of timeline) {
-        if (!tweet.isRetweet) {
+async function getTweetWhere(tweets, query) {
+    const isCallback = typeof query === 'function';
+    for await (const tweet of tweets) {
+        const matches = isCallback
+            ? await query(tweet)
+            : checkTweetMatches(tweet, query);
+        if (matches) {
             return tweet;
         }
     }
     return null;
+}
+exports.getTweetWhere = getTweetWhere;
+async function getTweetsWhere(tweets, query) {
+    const isCallback = typeof query === 'function';
+    const filtered = [];
+    for await (const tweet of tweets) {
+        const matches = isCallback ? query(tweet) : checkTweetMatches(tweet, query);
+        if (!matches)
+            continue;
+        filtered.push(tweet);
+    }
+    return filtered;
+}
+exports.getTweetsWhere = getTweetsWhere;
+function checkTweetMatches(tweet, options) {
+    return Object.keys(options).every((k) => {
+        const key = k;
+        return tweet[key] === options[key];
+    });
+}
+async function getLatestTweet(user, includeRetweets, max, auth) {
+    const timeline = getTweets(user, max, auth);
+    // No point looping if max is 1, just use first entry.
+    return max === 1
+        ? (await timeline.next()).value
+        : await getTweetWhere(timeline, { isRetweet: includeRetweets });
 }
 exports.getLatestTweet = getLatestTweet;
 async function getTweet(id, auth) {

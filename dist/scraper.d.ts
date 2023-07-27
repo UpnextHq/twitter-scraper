@@ -1,13 +1,28 @@
 import { Cookie } from 'tough-cookie';
+import { FetchTransformOptions } from './api';
 import { Profile } from './profile';
 import { SearchMode } from './search';
 import { QueryProfilesResponse, QueryTweetsResponse } from './timeline-v1';
-import { Tweet } from './tweets';
+import { Tweet, TweetQuery } from './tweets';
+import fetch from 'cross-fetch';
+export interface ScraperOptions {
+    /**
+     * An alternative fetch function to use instead of the default fetch function. This may be useful
+     * in nonstandard runtime environments, such as edge workers.
+     */
+    fetch: typeof fetch;
+    /**
+     * Additional options that control how requests and responses are processed. This can be used to
+     * proxy requests through other hosts, for example.
+     */
+    transform: Partial<FetchTransformOptions>;
+}
 /**
  * An interface to Twitter's undocumented API.
  * - Reusing Scraper objects is recommended to minimize the time spent authenticating unnecessarily.
  */
 export declare class Scraper {
+    private readonly options?;
     private auth;
     private authTrends;
     private token;
@@ -16,7 +31,7 @@ export declare class Scraper {
      * - Scrapers maintain their own guest tokens for Twitter's internal API.
      * - Reusing Scraper objects is recommended to minimize the time spent authenticating unnecessarily.
      */
-    constructor();
+    constructor(options?: Partial<ScraperOptions> | undefined);
     /**
      * Initializes auth properties using a guest token.
      * Used when creating a new instance of this class, and when logging out.
@@ -89,12 +104,40 @@ export declare class Scraper {
      */
     getTweetsByUserId(userId: string, maxTweets?: number): AsyncGenerator<Tweet, void>;
     /**
+     * Fetches the first tweet matching the given query.
+     *
+     * Example:
+     * ```js
+     * const timeline = getTweets("user", 200)
+     * const retweets = await getTweetsWhere({ isRetweet: true }, timeline);
+     * ```
+     * @param query A set of key/value pairs to test **all** tweets against.
+     * - All keys are optional.
+     * - If specified, the key must be implemented by that of {@link Tweet}.
+     * @param tweets The {@link AsyncGenerator} of tweets to search through.
+     */
+    getTweetWhere(tweets: AsyncIterable<Tweet>, query: TweetQuery): Promise<Tweet | null>;
+    /**
+     * Fetches all tweets matching the given query.
+     *
+     * Example:
+     * ```js
+     * const timeline = getTweets("user", 200)
+     * const retweets = await getTweetsWhere({ isRetweet: true }, timeline);
+     * ```
+     * @param query A set of key/value pairs to test **all** tweets against.
+     * - All keys are optional.
+     * - If specified, the key must be implemented by that of {@link Tweet}.
+     * @param tweets The {@link AsyncGenerator} of tweets to search through.
+     */
+    getTweetsWhere(tweets: AsyncIterable<Tweet>, query: TweetQuery): Promise<Tweet[]>;
+    /**
      * Fetches the most recent tweet from a Twitter user.
      * @param user The user whose latest tweet should be returned.
      * @param includeRetweets Whether or not to include retweets. Defaults to `false`.
      * @returns The {@link Tweet} object or `null`/`undefined` if it couldn't be fetched.
      */
-    getLatestTweet(user: string, includeRetweets?: boolean): Promise<Tweet | null | void>;
+    getLatestTweet(user: string, includeRetweets?: boolean, max?: number): Promise<Tweet | null | void>;
     /**
      * Fetches a single tweet.
      * @param id The ID of the tweet to fetch.
@@ -151,6 +194,7 @@ export declare class Scraper {
      * @returns This scraper instance.
      */
     withXCsrfToken(_token: string): Scraper;
+    private getAuthOptions;
     private handleResponse;
 }
 //# sourceMappingURL=scraper.d.ts.map

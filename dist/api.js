@@ -1,14 +1,10 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.addApiParams = exports.addApiFeatures = exports.requestApi = exports.bearerToken = void 0;
 const errors_1 = require("./errors");
 const proxy_1 = require("./proxy");
 const requests_1 = require("./requests");
 const headers_polyfill_1 = require("headers-polyfill");
-const cross_fetch_1 = __importDefault(require("cross-fetch"));
 exports.bearerToken = 'AAAAAAAAAAAAAAAAAAAAAFQODgEAAAAAVHTp76lzh3rFzcHbmHVvQxYYpTw%3DckAlMINMjmCwxUcaXbAN4XqJVdgMJaHqNOFgPMK0zN1qLqLQCF';
 /**
  * Used internally to send HTTP requests to the Twitter API.
@@ -24,7 +20,7 @@ async function requestApi(url, auth, method = 'GET') {
     let res;
     do {
         try {
-            res = await (0, cross_fetch_1.default)(url, {
+            res = await auth.fetch(url, {
                 method,
                 headers,
                 //eslint-disable-next-line @typescript-eslint/ban-ts-comment

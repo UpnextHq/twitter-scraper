@@ -9,10 +9,28 @@ const requests_1 = require("./requests");
 const headers_polyfill_1 = require("headers-polyfill");
 const cross_fetch_1 = __importDefault(require("cross-fetch"));
 /**
+ * Wraps the provided fetch function with transforms.
+ * @param fetchFn The fetch function.
+ * @param transform The transform options.
+ * @returns The input fetch function, wrapped with the provided transforms.
+ */
+function withTransform(fetchFn, transform) {
+    return async (input, init) => {
+        const fetchArgs = (await transform?.request?.(input, init)) ?? [
+            input,
+            init,
+        ];
+        const res = await fetchFn(...fetchArgs);
+        return (await transform?.response?.(res)) ?? res;
+    };
+}
+/**
  * A guest authentication token manager. Automatically handles token refreshes.
  */
 class TwitterGuestAuth {
-    constructor(bearerToken) {
+    constructor(bearerToken, options) {
+        this.options = options;
+        this.fetch = withTransform(options?.fetch ?? cross_fetch_1.default, options?.transform);
         this.bearerToken = bearerToken;
         this.jar = new tough_cookie_1.CookieJar();
     }
@@ -70,7 +88,7 @@ class TwitterGuestAuth {
             Authorization: `Bearer ${this.bearerToken}`,
             Cookie: await this.jar.getCookieString(guestActivateUrl),
         });
-        const res = await (0, cross_fetch_1.default)(guestActivateUrl, {
+        const res = await this.fetch(guestActivateUrl, {
             method: 'POST',
             headers: headers,
         });
