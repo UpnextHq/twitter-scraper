@@ -1,6 +1,6 @@
 import { Cookie } from 'tough-cookie';
-import { bearerToken, RequestApiResult } from './api';
-import { TwitterAuth, TwitterGuestAuth } from './auth';
+import { bearerToken, FetchTransformOptions, RequestApiResult } from './api';
+import { TwitterAuth, TwitterAuthOptions, TwitterGuestAuth } from './auth';
 import { TwitterUserAuth } from './auth-user';
 import { getProfile, getUserIdByScreenName, Profile } from './profile';
 import {
@@ -13,14 +13,32 @@ import {
 import { QueryProfilesResponse, QueryTweetsResponse } from './timeline-v1';
 import { getTrends } from './trends';
 import {
+  Tweet,
   getTweet,
   getTweets,
   getLatestTweet,
-  Tweet,
+  getTweetWhere,
+  getTweetsWhere,
   getTweetsByUserId,
+  TweetQuery,
 } from './tweets';
+import fetch from 'cross-fetch';
 
 const twUrl = 'https://twitter.com';
+
+export interface ScraperOptions {
+  /**
+   * An alternative fetch function to use instead of the default fetch function. This may be useful
+   * in nonstandard runtime environments, such as edge workers.
+   */
+  fetch: typeof fetch;
+
+  /**
+   * Additional options that control how requests and responses are processed. This can be used to
+   * proxy requests through other hosts, for example.
+   */
+  transform: Partial<FetchTransformOptions>;
+}
 
 /**
  * An interface to Twitter's undocumented API.
@@ -36,7 +54,7 @@ export class Scraper {
    * - Scrapers maintain their own guest tokens for Twitter's internal API.
    * - Reusing Scraper objects is recommended to minimize the time spent authenticating unnecessarily.
    */
-  constructor() {
+  constructor(private readonly options?: Partial<ScraperOptions>) {
     this.token = bearerToken;
     this.useGuestAuth();
   }
@@ -47,8 +65,8 @@ export class Scraper {
    * @internal
    */
   private useGuestAuth() {
-    this.auth = new TwitterGuestAuth(this.token);
-    this.authTrends = new TwitterGuestAuth(this.token);
+    this.auth = new TwitterGuestAuth(this.token, this.getAuthOptions());
+    this.authTrends = new TwitterGuestAuth(this.token, this.getAuthOptions());
   }
 
   /**
@@ -165,6 +183,46 @@ export class Scraper {
   }
 
   /**
+   * Fetches the first tweet matching the given query.
+   *
+   * Example:
+   * ```js
+   * const timeline = getTweets("user", 200)
+   * const retweets = await getTweetsWhere({ isRetweet: true }, timeline);
+   * ```
+   * @param query A set of key/value pairs to test **all** tweets against.
+   * - All keys are optional.
+   * - If specified, the key must be implemented by that of {@link Tweet}.
+   * @param tweets The {@link AsyncGenerator} of tweets to search through.
+   */
+  public getTweetWhere(
+    tweets: AsyncIterable<Tweet>,
+    query: TweetQuery,
+  ): Promise<Tweet | null> {
+    return getTweetWhere(tweets, query);
+  }
+
+  /**
+   * Fetches all tweets matching the given query.
+   *
+   * Example:
+   * ```js
+   * const timeline = getTweets("user", 200)
+   * const retweets = await getTweetsWhere({ isRetweet: true }, timeline);
+   * ```
+   * @param query A set of key/value pairs to test **all** tweets against.
+   * - All keys are optional.
+   * - If specified, the key must be implemented by that of {@link Tweet}.
+   * @param tweets The {@link AsyncGenerator} of tweets to search through.
+   */
+  public getTweetsWhere(
+    tweets: AsyncIterable<Tweet>,
+    query: TweetQuery,
+  ): Promise<Tweet[]> {
+    return getTweetsWhere(tweets, query);
+  }
+
+  /**
    * Fetches the most recent tweet from a Twitter user.
    * @param user The user whose latest tweet should be returned.
    * @param includeRetweets Whether or not to include retweets. Defaults to `false`.
@@ -173,8 +231,9 @@ export class Scraper {
   public getLatestTweet(
     user: string,
     includeRetweets = false,
+    max = 200,
   ): Promise<Tweet | null | void> {
-    return getLatestTweet(user, includeRetweets, this.auth);
+    return getLatestTweet(user, includeRetweets, max, this.auth);
   }
 
   /**
@@ -217,7 +276,7 @@ export class Scraper {
     email?: string,
   ): Promise<void> {
     // Swap in a real authorizer for all requests
-    const userAuth = new TwitterUserAuth(this.token);
+    const userAuth = new TwitterUserAuth(this.token, this.getAuthOptions());
     await userAuth.login(username, password, email);
     this.auth = userAuth;
     this.authTrends = userAuth;
@@ -247,7 +306,7 @@ export class Scraper {
    * @param cookies The cookies to set for the current session.
    */
   public async setCookies(cookies: (string | Cookie)[]): Promise<void> {
-    const userAuth = new TwitterUserAuth(this.token);
+    const userAuth = new TwitterUserAuth(this.token, this.getAuthOptions());
     for (const cookie of cookies) {
       await userAuth.cookieJar().setCookie(cookie, twUrl);
     }
@@ -290,6 +349,13 @@ export class Scraper {
       'Warning: Scraper#withXCsrfToken is deprecated and will be removed in a later version.',
     );
     return this;
+  }
+
+  private getAuthOptions(): Partial<TwitterAuthOptions> {
+    return {
+      fetch: this.options?.fetch,
+      transform: this.options?.transform,
+    };
   }
 
   private handleResponse<T>(res: RequestApiResult<T>): T {

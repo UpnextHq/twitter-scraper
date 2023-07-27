@@ -1,6 +1,6 @@
 {
   "name": "@the-convocation/twitter-scraper",
-  "version": "0.3.5",
+  "version": "0.4.0",
   "main": "dist/_module.js",
   "repository": "https://github.com/the-convocation/twitter-scraper.git",
   "author": "karashiiro <49822414+karashiiro@users.noreply.github.com>",
@@ -13,7 +13,7 @@
     "commit": "cz",
     "docs:generate": "typedoc --options typedoc.json",
     "docs:deploy": "yarn docs:generate && gh-pages -d docs",
-    "format": "prettier --write \\\"src/**/*.ts\\\" \\\"test/**/*.ts\\\"",
+    "format": "prettier --write src/**/*.ts",
     "prepare": "husky install",
     "test": "jest"
   },

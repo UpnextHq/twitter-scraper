@@ -26,6 +26,11 @@ test('scraper can get tweet', async () => {
         url: 'https://video.twimg.com/amplify_video/1328684333599756289/vid/960x720/PcL8yv8KhgQ48Qpt.mp4?tag=13',
       },
     ],
+    isQuoted: false,
+    isReply: false,
+    isRetweet: false,
+    isPin: false,
+    sensitiveContent: false,
   };
 
   const scraper = new Scraper();
@@ -53,6 +58,32 @@ test('scraper can get tweets without logging in', async () => {
   expect(counter).toBe(sampleSize);
 });
 
+test('scraper can get first tweet matching query', async () => {
+  const scraper = new Scraper();
+
+  const timeline = scraper.getTweets('elonmusk');
+  const latestQuote = await scraper.getTweetWhere(timeline, { isQuoted: true });
+
+  expect(latestQuote?.isQuoted).toBeTruthy();
+});
+
+test('scraper can get all tweets matching query', async () => {
+  const scraper = new Scraper();
+
+  // Sample size of 20 should be enough without taking long.
+  const timeline = scraper.getTweets('elonmusk', 20);
+  const retweets = await scraper.getTweetsWhere(
+    timeline,
+    (tweet) => tweet.isRetweet === true,
+  );
+
+  expect(retweets).toBeTruthy();
+
+  for (const tweet of retweets) {
+    expect(tweet.isRetweet).toBe(true);
+  }
+}, 20000);
+
 test('scraper can get latest tweet', async () => {
   const scraper = new Scraper();
 
@@ -61,10 +92,13 @@ test('scraper can get latest tweet', async () => {
   const expected = (await tweets.next()).value;
 
   // NEW APPROACH
-  const includeRts = expected?.isRetweet || false;
-  const latest = await scraper.getLatestTweet('elonmusk', includeRts);
+  const latest = (await scraper.getLatestTweet(
+    'elonmusk',
+    expected?.isRetweet || false,
+  )) as Tweet;
+
   expect(expected?.permanentUrl).toEqual(latest?.permanentUrl);
-});
+}, 30000);
 
 test('scraper can get user mentions in tweets', async () => {
   const expected: Mention[] = [
@@ -103,6 +137,11 @@ test('scraper can get tweet quotes and replies', async () => {
     userId: '978944851',
     username: 'VsauceTwo',
     videos: [],
+    isQuoted: false,
+    isReply: false,
+    isRetweet: false,
+    isPin: false,
+    sensitiveContent: false,
   };
 
   const scraper = new Scraper();
@@ -145,6 +184,11 @@ test('scraper can get retweet', async () => {
     userId: '773578328498372608',
     username: 'TwitterTogether',
     videos: [],
+    isQuoted: false,
+    isReply: false,
+    isRetweet: false,
+    isPin: false,
+    sensitiveContent: false,
   };
 
   const scraper = new Scraper();
@@ -164,9 +208,8 @@ test('scraper can get tweet views', async () => {
     id: '1606055187348688896',
     hashtags: [],
     mentions: [],
-    name: 'Twitter Support',
-    permanentUrl:
-      'https://twitter.com/TwitterSupport/status/1606055187348688896',
+    name: 'Support',
+    permanentUrl: 'https://twitter.com/Support/status/1606055187348688896',
     photos: [],
     text: 'Replies and likes don’t tell the whole story. We’re making it easier to tell *just* how many people have seen your Tweets with the addition of view counts, shown right next to likes. Now on iOS and Android, web coming soon.\n\nhttps://t.co/hrlMQyXJfx',
     thread: [],
@@ -174,8 +217,13 @@ test('scraper can get tweet views', async () => {
     timestamp: 1671748370,
     urls: ['https://help.twitter.com/using-twitter/view-counts'],
     userId: '17874544',
-    username: 'TwitterSupport',
+    username: 'Support',
     videos: [],
+    isQuoted: false,
+    isReply: false,
+    isRetweet: false,
+    isPin: false,
+    sensitiveContent: false,
   };
 
   const scraper = new Scraper();
