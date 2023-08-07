@@ -23,6 +23,7 @@ import {
   TweetQuery,
 } from './tweets';
 import fetch from 'cross-fetch';
+import { getThread } from './threads';
 
 const twUrl = 'https://twitter.com';
 
@@ -249,6 +250,10 @@ export class Scraper {
    */
   public getTweet(id: string): Promise<Tweet | null> {
     return getTweet(id, this.auth);
+  }
+
+  public getThread(id: string): Promise<Tweet[]> {
+    return getThread(id, this.auth);
   }
 
   /**

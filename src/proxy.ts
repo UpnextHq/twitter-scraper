@@ -19,11 +19,15 @@ const setProxyService = (proxyService: ProxyService | undefined): void => {
 };
 
 const getProxyAgent = (): HttpsProxyAgent<any> | undefined => {
-  const proxyUrl = _proxyService?.getProxy()?.toString('http');
+  const proxyUrl = getProxy()?.toString('http');
 
   if (proxyUrl) {
     return new HttpsProxyAgent(proxyUrl);
   }
 };
 
-export { setProxyService, getProxyAgent };
+const getProxy = (): ProxyItem | undefined => {
+  return _proxyService?.getProxy();
+};
+
+export { setProxyService, getProxyAgent, getProxy };
