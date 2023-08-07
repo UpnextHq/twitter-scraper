@@ -8,6 +8,7 @@ const profile_1 = require("./profile");
 const search_1 = require("./search");
 const trends_1 = require("./trends");
 const tweets_1 = require("./tweets");
+const threads_1 = require("./threads");
 const twUrl = 'https://twitter.com';
 /**
  * An interface to Twitter's undocumented API.
@@ -172,6 +173,9 @@ class Scraper {
      */
     getTweet(id) {
         return (0, tweets_1.getTweet)(id, this.auth);
+    }
+    getThread(id) {
+        return (0, threads_1.getThread)(id, this.auth);
     }
     /**
      * Returns if the scraper has a guest token. The token may not be valid.

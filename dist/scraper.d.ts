@@ -150,6 +150,7 @@ export declare class Scraper {
      * @returns The {@link Tweet} object, or `null` if it couldn't be fetched.
      */
     getTweet(id: string): Promise<Tweet | null>;
+    getThread(id: string): Promise<Tweet[]>;
     /**
      * Returns if the scraper has a guest token. The token may not be valid.
      * @returns `true` if the scraper has a guest token; otherwise `false`.

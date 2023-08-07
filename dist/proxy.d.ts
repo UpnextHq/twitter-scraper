@@ -11,5 +11,6 @@ type ProxyService = {
 };
 declare const setProxyService: (proxyService: ProxyService | undefined) => void;
 declare const getProxyAgent: () => HttpsProxyAgent<any> | undefined;
-export { setProxyService, getProxyAgent };
+declare const getProxy: () => ProxyItem | undefined;
+export { setProxyService, getProxyAgent, getProxy };
 //# sourceMappingURL=proxy.d.ts.map
