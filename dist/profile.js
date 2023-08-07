@@ -1,8 +1,12 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getUserIdByScreenName = exports.getProfile = exports.parseProfile = void 0;
+const json_stable_stringify_1 = __importDefault(require("json-stable-stringify"));
 const api_1 = require("./api");
-function parseProfile(user) {
+function parseProfile(user, isBlueVerified) {
     const profile = {
         avatar: user.profile_image_url_https,
         banner: user.profile_banner_url,
@@ -10,6 +14,7 @@ function parseProfile(user) {
         followersCount: user.followers_count,
         followingCount: user.favourites_count,
         friendsCount: user.friends_count,
+        mediaCount: user.media_count,
         isPrivate: user.protected,
         isVerified: user.verified,
         likesCount: user.favourites_count,
@@ -21,6 +26,7 @@ function parseProfile(user) {
         url: `https://twitter.com/${user.screen_name}`,
         userId: user.id_str,
         username: user.screen_name,
+        isBlueVerified: isBlueVerified ?? false,
     };
     if (user.created_at != null) {
         profile.joined = new Date(Date.parse(user.created_at));
@@ -34,11 +40,19 @@ function parseProfile(user) {
 exports.parseProfile = parseProfile;
 async function getProfile(username, auth) {
     const params = new URLSearchParams();
-    params.set('variables', JSON.stringify({
+    params.set('variables', (0, json_stable_stringify_1.default)({
         screen_name: username,
         withHighlightedLabel: true,
     }));
-    const res = await (0, api_1.requestApi)(`https://api.twitter.com/graphql/4S2ihIKfF3xhp-ENxvUAfQ/UserByScreenName?${params}`, auth);
+    const features = (0, api_1.addApiFeatures)({
+        interactive_text_enabled: true,
+        longform_notetweets_inline_media_enabled: false,
+        responsive_web_text_conversations_enabled: false,
+        tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled: false,
+        vibe_api_enabled: false,
+    });
+    params.set('features', (0, json_stable_stringify_1.default)(features));
+    const res = await (0, api_1.requestApi)(`https://api.twitter.com/graphql/u7wQyGi6oExe8_TRWGMq4Q/UserResultByScreenNameQuery?${params.toString()}`, auth);
     if (!res.success) {
         return res;
     }
@@ -50,7 +64,7 @@ async function getProfile(username, auth) {
             err: new Error(errors[0].message),
         };
     }
-    const { user } = value.data;
+    const { result: user } = value.data.user_result;
     const { legacy } = user;
     if (user.rest_id == null || user.rest_id.length === 0) {
         return {
@@ -67,7 +81,7 @@ async function getProfile(username, auth) {
     }
     return {
         success: true,
-        value: parseProfile(user.legacy),
+        value: parseProfile(user.legacy, user.isBlueVerified),
     };
 }
 exports.getProfile = getProfile;

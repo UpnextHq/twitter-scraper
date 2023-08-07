@@ -16,18 +16,21 @@ function parseLegacyTweet(user, tweet) {
             err: new Error('User was not found in the timeline object.'),
         };
     }
+    if (tweet.id_str == null) {
+        if (!tweet.conversation_id_str) {
+            return {
+                success: false,
+                err: new Error('Tweet ID was not found in object.'),
+            };
+        }
+        tweet.id_str = tweet.conversation_id_str;
+    }
     const hashtags = tweet.entities?.hashtags ?? [];
     const mentions = tweet.entities?.user_mentions ?? [];
     const media = tweet.extended_entities?.media ?? [];
     const pinnedTweets = new Set(user.pinned_tweet_ids_str ?? []);
     const urls = tweet.entities?.urls ?? [];
     const { photos, videos, sensitiveContent } = (0, timeline_tweet_util_1.parseMediaGroups)(media);
-    if (tweet.id_str == null) {
-        return {
-            success: false,
-            err: new Error('Tweet ID was not found in object.'),
-        };
-    }
     const tw = {
         conversationId: tweet.conversation_id_str,
         id: tweet.id_str,
@@ -82,7 +85,7 @@ function parseLegacyTweet(user, tweet) {
         tw.isRetweet = true;
         tw.retweetedStatusId = retweetedStatusIdStr;
         if (retweetedStatusResult) {
-            const parsedResult = parseLegacyTweet(retweetedStatusResult?.core?.user_results?.result?.legacy, retweetedStatusResult?.legacy);
+            const parsedResult = parseLegacyTweet(retweetedStatusResult?.core?.user_result?.result?.legacy, retweetedStatusResult?.legacy);
             if (parsedResult.success) {
                 tw.retweetedStatus = parsedResult.tweet;
             }
@@ -105,10 +108,11 @@ function parseLegacyTweet(user, tweet) {
 }
 exports.parseLegacyTweet = parseLegacyTweet;
 function parseResult(result) {
-    if (result?.legacy && result.note_tweet?.note_tweet_results?.result?.text) {
-        result.legacy.full_text = result.note_tweet.note_tweet_results.result.text;
+    const noteTweetResultText = result?.note_tweet?.note_tweet_results?.result?.text;
+    if (result?.legacy && noteTweetResultText) {
+        result.legacy.full_text = noteTweetResultText;
     }
-    const tweetResult = parseLegacyTweet(result?.core?.user_results?.result?.legacy, result?.legacy);
+    const tweetResult = parseLegacyTweet(result?.core?.user_result?.result?.legacy, result?.legacy);
     if (!tweetResult.success) {
         return tweetResult;
     }
@@ -118,8 +122,12 @@ function parseResult(result) {
             tweetResult.tweet.views = views;
         }
     }
-    if (result?.quoted_status_result?.result) {
-        const quotedTweetResult = parseResult(result.quoted_status_result.result);
+    const quotedResult = result?.quoted_status_result?.result;
+    if (quotedResult) {
+        if (quotedResult.legacy && quotedResult.rest_id) {
+            quotedResult.legacy.id_str = quotedResult.rest_id;
+        }
+        const quotedTweetResult = parseResult(quotedResult);
         if (quotedTweetResult.success) {
             tweetResult.tweet.quotedStatus = quotedTweetResult.tweet;
         }
@@ -129,50 +137,62 @@ function parseResult(result) {
 function parseTimelineTweetsV2(timeline) {
     let cursor;
     const tweets = [];
-    const instructions = timeline.data?.user?.result?.timeline_v2?.timeline?.instructions ?? [];
+    const instructions = timeline.data?.user_result?.result?.timeline_response?.timeline
+        ?.instructions ?? [];
     for (const instruction of instructions) {
-        for (const entry of instruction.entries ?? []) {
-            if (entry.content?.cursorType === 'Bottom') {
-                cursor = entry.content.value;
+        const entries = instruction.entries ?? [];
+        for (const entry of entries) {
+            const entryContent = entry.content;
+            if (!entryContent)
+                continue;
+            if (entryContent.cursorType === 'Bottom') {
+                cursor = entryContent.value;
                 continue;
             }
-            if (entry.content?.itemContent?.tweet_results?.result?.__typename ===
-                'Tweet') {
-                const tweetResult = parseResult(entry.content.itemContent.tweet_results.result);
-                if (tweetResult.success) {
-                    tweets.push(tweetResult.tweet);
-                }
+            const idStr = entry.entryId;
+            if (!idStr.startsWith('tweet')) {
+                continue;
+            }
+            if (entryContent.content) {
+                parseAndPush(tweets, entryContent.content, idStr);
             }
         }
     }
     return { tweets, next: cursor };
 }
 exports.parseTimelineTweetsV2 = parseTimelineTweetsV2;
-function parseThreadedConversation(conversation) {
-    const tweets = [];
-    const instructions = conversation.data?.threaded_conversation_with_injections_v2?.instructions ??
-        [];
-    for (const instruction of instructions) {
-        for (const entry of instruction.entries ?? []) {
-            if (entry.content?.itemContent?.tweet_results?.result?.__typename ===
-                'Tweet') {
-                const tweetResult = parseResult(entry.content.itemContent.tweet_results.result);
-                if (tweetResult.success) {
-                    if (entry.content.itemContent.tweetDisplayType === 'SelfThread') {
-                        tweetResult.tweet.isSelfThread = true;
-                    }
-                    tweets.push(tweetResult.tweet);
+function parseAndPush(tweets, content, entryId, isConversation = false) {
+    const result = content.tweetResult?.result;
+    if (result?.__typename === 'Tweet') {
+        if (result.legacy) {
+            const toReplace = isConversation ? 'tweet-' : 'conversation-';
+            result.legacy.id_str = entryId.replace(toReplace, '');
+        }
+        const tweetResult = parseResult(result);
+        if (tweetResult.success) {
+            if (isConversation) {
+                if (content?.tweetDisplayType === 'SelfThread') {
+                    tweetResult.tweet.isSelfThread = true;
                 }
             }
+            tweets.push(tweetResult.tweet);
+        }
+    }
+}
+function parseThreadedConversation(conversation) {
+    const tweets = [];
+    const instructions = conversation.data?.timeline_response?.instructions ?? [];
+    for (const instruction of instructions) {
+        const entries = instruction.entries ?? [];
+        for (const entry of entries) {
+            const entryContent = entry.content?.content;
+            if (entryContent) {
+                parseAndPush(tweets, entryContent, entry.entryId, true);
+            }
             for (const item of entry.content?.items ?? []) {
-                if (item.item?.itemContent?.tweet_results?.result?.__typename === 'Tweet') {
-                    const tweetResult = parseResult(item.item.itemContent.tweet_results.result);
-                    if (tweetResult.success) {
-                        if (item.item.itemContent.tweetDisplayType === 'SelfThread') {
-                            tweetResult.tweet.isSelfThread = true;
-                        }
-                        tweets.push(tweetResult.tweet);
-                    }
+                const itemContent = item.item?.content;
+                if (itemContent) {
+                    parseAndPush(tweets, itemContent, entry.entryId, true);
                 }
             }
         }

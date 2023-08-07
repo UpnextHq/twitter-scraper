@@ -15,7 +15,8 @@ function parseSearchTimelineTweets(timeline) {
                 cursor = instruction.entry.content.value;
                 continue;
             }
-            for (const entry of instruction.entries ?? []) {
+            const entries = instruction.entries ?? [];
+            for (const entry of entries) {
                 const itemContent = entry.content?.itemContent;
                 if (itemContent?.tweetDisplayType === 'Tweet') {
                     const tweetResultRaw = itemContent.tweet_results?.result;
@@ -51,14 +52,15 @@ function parseSearchTimelineUsers(timeline) {
                 cursor = instruction.entry.content.value;
                 continue;
             }
-            for (const entry of instruction.entries ?? []) {
+            const entries = instruction.entries ?? [];
+            for (const entry of entries) {
                 const itemContent = entry.content?.itemContent;
                 if (itemContent?.userDisplayType === 'User') {
                     const userResultRaw = itemContent.user_results?.result;
                     if (userResultRaw?.legacy) {
-                        const profile = (0, profile_1.parseProfile)(userResultRaw.legacy);
+                        const profile = (0, profile_1.parseProfile)(userResultRaw.legacy, userResultRaw.is_blue_verified);
                         if (!profile.userId) {
-                            profile.userId = itemContent.user_results?.result?.rest_id;
+                            profile.userId = userResultRaw.rest_id;
                         }
                         profiles.push(profile);
                     }

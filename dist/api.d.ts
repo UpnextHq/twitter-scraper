@@ -57,6 +57,17 @@ export declare function addApiFeatures(o: object): {
     standardized_nudges_misinfo: boolean;
     longform_notetweets_rich_text_read_enabled: boolean;
     responsive_web_enhance_cards_enabled: boolean;
+    subscriptions_verification_info_enabled: boolean;
+    subscriptions_verification_info_reason_enabled: boolean;
+    subscriptions_verification_info_verified_since_enabled: boolean;
+    super_follow_badge_privacy_enabled: boolean;
+    super_follow_exclusive_tweet_notifications_enabled: boolean;
+    super_follow_tweet_api_enabled: boolean;
+    super_follow_user_api_enabled: boolean;
+    android_graphql_skip_api_media_color_palette: boolean;
+    creator_subscriptions_subscription_count_enabled: boolean;
+    blue_business_profile_image_shape_enabled: boolean;
+    unified_cards_ad_metadata_container_dynamic_card_content_query_enabled: boolean;
 };
 export declare function addApiParams(params: URLSearchParams, includeTweetReplies: boolean): URLSearchParams;
 export {};

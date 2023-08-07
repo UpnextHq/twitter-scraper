@@ -108,13 +108,16 @@ export declare class Scraper {
      *
      * Example:
      * ```js
-     * const timeline = getTweets("user", 200)
-     * const retweets = await getTweetsWhere({ isRetweet: true }, timeline);
+     * const timeline = scraper.getTweets('user', 200);
+     * const retweet = await scraper.getTweetWhere(timeline, { isRetweet: true });
      * ```
-     * @param query A set of key/value pairs to test **all** tweets against.
+     * @param tweets The {@link AsyncIterable} of tweets to search through.
+     * @param query A query to test **all** tweets against. This may be either an
+     * object of key/value pairs or a predicate. If this query is an object, all
+     * key/value pairs must match a {@link Tweet} for it to be returned. If this query
+     * is a predicate, it must resolve to `true` for a {@link Tweet} to be returned.
      * - All keys are optional.
      * - If specified, the key must be implemented by that of {@link Tweet}.
-     * @param tweets The {@link AsyncGenerator} of tweets to search through.
      */
     getTweetWhere(tweets: AsyncIterable<Tweet>, query: TweetQuery): Promise<Tweet | null>;
     /**
@@ -122,13 +125,16 @@ export declare class Scraper {
      *
      * Example:
      * ```js
-     * const timeline = getTweets("user", 200)
-     * const retweets = await getTweetsWhere({ isRetweet: true }, timeline);
+     * const timeline = scraper.getTweets('user', 200);
+     * const retweets = await scraper.getTweetsWhere(timeline, { isRetweet: true });
      * ```
-     * @param query A set of key/value pairs to test **all** tweets against.
+     * @param tweets The {@link AsyncIterable} of tweets to search through.
+     * @param query A query to test **all** tweets against. This may be either an
+     * object of key/value pairs or a predicate. If this query is an object, all
+     * key/value pairs must match a {@link Tweet} for it to be returned. If this query
+     * is a predicate, it must resolve to `true` for a {@link Tweet} to be returned.
      * - All keys are optional.
      * - If specified, the key must be implemented by that of {@link Tweet}.
-     * @param tweets The {@link AsyncGenerator} of tweets to search through.
      */
     getTweetsWhere(tweets: AsyncIterable<Tweet>, query: TweetQuery): Promise<Tweet[]>;
     /**

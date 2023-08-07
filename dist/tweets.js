@@ -3,38 +3,35 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getTweet = exports.getLatestTweet = exports.getTweetsWhere = exports.getTweetWhere = exports.getTweetsByUserId = exports.getTweets = exports.fetchTweets = void 0;
+exports.getTweet = exports.getLatestTweet = exports.getTweetsWhere = exports.getTweetWhere = exports.getTweetsByUserId = exports.getTweets = exports.fetchTweets = exports.features = void 0;
 const api_1 = require("./api");
 const profile_1 = require("./profile");
 const timeline_v2_1 = require("./timeline-v2");
 const timeline_async_1 = require("./timeline-async");
 const json_stable_stringify_1 = __importDefault(require("json-stable-stringify"));
+exports.features = (0, api_1.addApiFeatures)({
+    interactive_text_enabled: true,
+    longform_notetweets_inline_media_enabled: false,
+    responsive_web_text_conversations_enabled: false,
+    tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled: false,
+    vibe_api_enabled: false,
+});
 async function fetchTweets(userId, maxTweets, cursor, auth) {
     if (maxTweets > 200) {
         maxTweets = 200;
     }
     const variables = {
-        userId,
+        includeHasBirdwatchNotes: false,
+        rest_id: userId,
         count: maxTweets,
-        includePromotedContent: false,
-        withQuickPromoteEligibilityTweetFields: false,
-        withVoice: true,
-        withV2Timeline: true,
     };
-    const features = (0, api_1.addApiFeatures)({
-        interactive_text_enabled: true,
-        longform_notetweets_inline_media_enabled: false,
-        responsive_web_text_conversations_enabled: false,
-        tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled: false,
-        vibe_api_enabled: true,
-    });
     if (cursor != null && cursor != '') {
         variables['cursor'] = cursor;
     }
     const params = new URLSearchParams();
     params.set('variables', (0, json_stable_stringify_1.default)(variables));
-    params.set('features', (0, json_stable_stringify_1.default)(features));
-    const res = await (0, api_1.requestApi)(`https://twitter.com/i/api/graphql/UGi7tjRPr-d_U3bCPIko5Q/UserTweets?${params.toString()}`, auth);
+    params.set('features', (0, json_stable_stringify_1.default)(exports.features));
+    const res = await (0, api_1.requestApi)(`https://api.twitter.com/graphql/8IS8MaO-2EN6GZZZb8jF0g/UserWithProfileTweetsAndRepliesQueryV2?${params.toString()}`, auth);
     if (!res.success) {
         throw res.err;
     }
@@ -100,32 +97,17 @@ exports.getLatestTweet = getLatestTweet;
 async function getTweet(id, auth) {
     const variables = {
         focalTweetId: id,
-        with_rux_injections: false,
-        includePromotedContent: true,
-        withCommunity: true,
-        withQuickPromoteEligibilityTweetFields: true,
-        withBirdwatchNotes: true,
-        withVoice: true,
-        withV2Timeline: true,
+        includeHasBirdwatchNotes: false,
     };
-    const features = (0, api_1.addApiFeatures)({
-        longform_notetweets_inline_media_enabled: true,
-        tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled: false,
-    });
     const params = new URLSearchParams();
-    params.set('features', (0, json_stable_stringify_1.default)(features));
+    params.set('features', (0, json_stable_stringify_1.default)(exports.features));
     params.set('variables', (0, json_stable_stringify_1.default)(variables));
-    const res = await (0, api_1.requestApi)(`https://twitter.com/i/api/graphql/VWFGPVAGkZMGRKGe3GFFnA/TweetDetail?${params.toString()}`, auth);
+    const res = await (0, api_1.requestApi)(`https://api.twitter.com/graphql/83h5UyHZ9wEKBVzALX8R_g/ConversationTimelineV2?${params.toString()}`, auth);
     if (!res.success) {
         throw res.err;
     }
     const tweets = (0, timeline_v2_1.parseThreadedConversation)(res.value);
-    for (const tweet of tweets) {
-        if (tweet.id === id) {
-            return tweet;
-        }
-    }
-    return null;
+    return tweets.find((t) => t.id === id) ?? null;
 }
 exports.getTweet = getTweet;
 //# sourceMappingURL=tweets.js.map

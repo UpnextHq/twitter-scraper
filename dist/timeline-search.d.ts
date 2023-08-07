@@ -1,13 +1,13 @@
 import { QueryProfilesResponse, QueryTweetsResponse } from './timeline-v1';
-import { TimelineEntryRaw } from './timeline-v2';
+import { SearchEntryRaw } from './timeline-v2';
 export interface SearchTimeline {
     data?: {
         search_by_raw_query?: {
             search_timeline?: {
                 timeline?: {
                     instructions?: {
-                        entries?: TimelineEntryRaw[];
-                        entry?: TimelineEntryRaw;
+                        entries?: SearchEntryRaw[];
+                        entry?: SearchEntryRaw;
                         type?: string;
                     }[];
                 };

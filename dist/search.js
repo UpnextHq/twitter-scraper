@@ -60,6 +60,9 @@ async function getSearchTimeline(query, maxItems, searchMode, auth, cursor) {
         responsive_web_media_download_video_enabled: false,
         responsive_web_twitter_article_tweet_consumption_enabled: false,
         tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled: true,
+        interactive_text_enabled: false,
+        responsive_web_text_conversations_enabled: false,
+        vibe_api_enabled: false,
     });
     const fieldToggles = {
         withArticleRichContentState: false,
@@ -87,7 +90,7 @@ async function getSearchTimeline(query, maxItems, searchMode, auth, cursor) {
     params.set('features', (0, json_stable_stringify_1.default)(features));
     params.set('fieldToggles', (0, json_stable_stringify_1.default)(fieldToggles));
     params.set('variables', (0, json_stable_stringify_1.default)(variables));
-    const res = await (0, api_1.requestApi)(`https://twitter.com/i/api/graphql/nK1dw4oV3k4w5TdtcAdSww/SearchTimeline?${params.toString()}`, auth);
+    const res = await (0, api_1.requestApi)(`https://api.twitter.com/graphql/gkjsKepM6gl_HmFWoWKfgg/SearchTimeline?${params.toString()}`, auth);
     if (!res.success) {
         throw res.err;
     }
