@@ -8,7 +8,6 @@ const profile_1 = require("./profile");
 const search_1 = require("./search");
 const trends_1 = require("./trends");
 const tweets_1 = require("./tweets");
-const threads_1 = require("./threads");
 const twUrl = 'https://twitter.com';
 /**
  * An interface to Twitter's undocumented API.
@@ -174,8 +173,43 @@ class Scraper {
     getTweet(id) {
         return (0, tweets_1.getTweet)(id, this.auth);
     }
-    getThread(id) {
-        return (0, threads_1.getThread)(id, this.auth);
+    async getThread(id) {
+        const tweet = await this.getTweet(id);
+        const omit = (tw) => {
+            const { inReplyToStatus, quotedStatus, thread, ...rest } = tw;
+            return { ...rest };
+        };
+        const finalTweet = tweet?.inReplyToStatusId && tweet.thread.length === 0
+            ? await this.getTweet(tweet.inReplyToStatusId)
+            : tweet;
+        if (finalTweet) {
+            if (finalTweet.thread) {
+                return [
+                    ...finalTweet.thread.map((item) => omit(item)),
+                    omit(finalTweet),
+                ]
+                    .map((item) => {
+                    return {
+                        ...item,
+                        id: item.id?.replace('conversationthread-', ''),
+                        permanentUrl: item.permanentUrl?.replace('status/conversationthread-', 'status/'),
+                    };
+                })
+                    .sort((a, b) => {
+                    if (!b.inReplyToStatusId) {
+                        return 1;
+                    }
+                    else if (!a.inReplyToStatusId) {
+                        return -1;
+                    }
+                    else {
+                        return a.inReplyToStatusId.localeCompare(b.inReplyToStatusId);
+                    }
+                });
+            }
+            return [finalTweet];
+        }
+        return [];
     }
     /**
      * Returns if the scraper has a guest token. The token may not be valid.

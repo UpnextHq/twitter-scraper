@@ -23,7 +23,6 @@ import {
   TweetQuery,
 } from './tweets';
 import fetch from 'cross-fetch';
-import { getThread } from './threads';
 
 const twUrl = 'https://twitter.com';
 
@@ -252,8 +251,52 @@ export class Scraper {
     return getTweet(id, this.auth);
   }
 
-  public getThread(id: string): Promise<Tweet[]> {
-    return getThread(id, this.auth);
+  public async getThread(
+    id: string,
+  ): Promise<Omit<Tweet, 'inReplyToStatus' | 'quotedStatus' | 'thread'>[]> {
+    const tweet = await this.getTweet(id);
+    const omit = (tw: Tweet) => {
+      const { inReplyToStatus, quotedStatus, thread, ...rest } = tw;
+
+      return { ...rest };
+    };
+
+    const finalTweet =
+      tweet?.inReplyToStatusId && tweet.thread.length === 0
+        ? await this.getTweet(tweet.inReplyToStatusId)
+        : tweet;
+
+    if (finalTweet) {
+      if (finalTweet.thread) {
+        return [
+          ...finalTweet.thread.map((item) => omit(item)),
+          omit(finalTweet),
+        ]
+          .map((item) => {
+            return {
+              ...item,
+              id: item.id?.replace('conversationthread-', ''),
+              permanentUrl: item.permanentUrl?.replace(
+                'status/conversationthread-',
+                'status/',
+              ),
+            };
+          })
+          .sort((a, b) => {
+            if (!b.inReplyToStatusId) {
+              return 1;
+            } else if (!a.inReplyToStatusId) {
+              return -1;
+            } else {
+              return a.inReplyToStatusId.localeCompare(b.inReplyToStatusId);
+            }
+          });
+      }
+
+      return [finalTweet];
+    }
+
+    return [];
   }
 
   /**

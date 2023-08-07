@@ -19,12 +19,9 @@
   },
   "dependencies": {
     "cross-fetch": "^4.0.0-alpha.5",
-    "expiry-map": "2.0.0",
-    "got-scraping": "3.2.13",
     "headers-polyfill": "^3.1.2",
     "https-proxy-agent": "7.0.1",
     "json-stable-stringify": "^1.0.2",
-    "p-memoize": "4.0.4",
     "set-cookie-parser": "^2.6.0",
     "tough-cookie": "^4.1.2",
     "tslib": "^2.5.2"
