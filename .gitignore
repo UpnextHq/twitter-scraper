@@ -105,5 +105,8 @@ typings/
 # VSCode
 .vscode/
 
+# JetBrains
+.idea/
+
 # Documentation
 docs/
