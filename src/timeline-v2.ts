@@ -77,7 +77,7 @@ export interface TimelineInstruction {
 
 export interface TimelineV2 {
   data?: {
-    user_result?: {
+    user?: {
       result?: {
         timeline_response?: {
           timeline?: {
@@ -197,7 +197,7 @@ export function parseLegacyTweet(
 
     if (retweetedStatusResult) {
       const parsedResult = parseLegacyTweet(
-        retweetedStatusResult?.core?.user_result?.result?.legacy,
+        retweetedStatusResult?.core?.user_results?.result?.legacy,
         retweetedStatusResult?.legacy,
       );
 
@@ -236,7 +236,7 @@ function parseResult(result?: TimelineResultRaw): ParseTweetResult {
   }
 
   const tweetResult = parseLegacyTweet(
-    result?.core?.user_result?.result?.legacy,
+    result?.core?.user_results?.result?.legacy,
     result?.legacy,
   );
   if (!tweetResult.success) {
@@ -271,8 +271,8 @@ export function parseTimelineTweetsV2(
   let cursor: string | undefined;
   const tweets: Tweet[] = [];
   const instructions =
-    timeline.data?.user_result?.result?.timeline_response?.timeline
-      ?.instructions ?? [];
+    timeline.data?.user?.result?.timeline_response?.timeline?.instructions ??
+    [];
   for (const instruction of instructions) {
     const entries = instruction.entries ?? [];
 
@@ -299,8 +299,7 @@ export function parseTimelineTweetsV2(
   return { tweets, next: cursor };
 }
 
-function parseAndPush(
-  tweets: Tweet[],
+export function parseTimelineEntryItemContentRaw(
   content: TimelineEntryItemContentRaw,
   entryId: string,
   isConversation = false,
@@ -321,8 +320,27 @@ function parseAndPush(
         }
       }
 
-      tweets.push(tweetResult.tweet);
+      return tweetResult.tweet;
     }
+  }
+
+  return null;
+}
+
+function parseAndPush(
+  tweets: Tweet[],
+  content: TimelineEntryItemContentRaw,
+  entryId: string,
+  isConversation = false,
+) {
+  const tweet = parseTimelineEntryItemContentRaw(
+    content,
+    entryId,
+    isConversation,
+  );
+
+  if (tweet) {
+    tweets.push(tweet);
   }
 }
 
