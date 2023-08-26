@@ -1,5 +1,6 @@
 import { RequestApiResult } from './api';
 import { TwitterAuth } from './auth';
+import { TwitterApiErrorRaw } from './errors';
 export interface LegacyUserRaw {
     created_at?: string;
     description?: string;
@@ -61,17 +62,15 @@ export interface Profile {
 }
 export interface UserRaw {
     data: {
-        user_result: {
+        user: {
             result: {
                 rest_id?: string;
-                isBlueVerified: boolean;
+                is_blue_verified?: boolean;
                 legacy: LegacyUserRaw;
             };
         };
     };
-    errors?: {
-        message: string;
-    }[];
+    errors?: TwitterApiErrorRaw[];
 }
 export declare function parseProfile(user: LegacyUserRaw, isBlueVerified?: boolean): Profile;
 export declare function getProfile(username: string, auth: TwitterAuth): Promise<RequestApiResult<Profile>>;

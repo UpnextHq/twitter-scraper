@@ -62,7 +62,7 @@ export interface TimelineInstruction {
 }
 export interface TimelineV2 {
     data?: {
-        user_result?: {
+        user?: {
             result?: {
                 timeline_response?: {
                     timeline?: {
@@ -82,5 +82,6 @@ export interface ThreadedConversation {
 }
 export declare function parseLegacyTweet(user?: LegacyUserRaw, tweet?: LegacyTweetRaw): ParseTweetResult;
 export declare function parseTimelineTweetsV2(timeline: TimelineV2): QueryTweetsResponse;
+export declare function parseTimelineEntryItemContentRaw(content: TimelineEntryItemContentRaw, entryId: string, isConversation?: boolean): Tweet | null;
 export declare function parseThreadedConversation(conversation: ThreadedConversation): Tweet[];
 //# sourceMappingURL=timeline-v2.d.ts.map

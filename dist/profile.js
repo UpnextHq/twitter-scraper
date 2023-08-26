@@ -6,16 +6,19 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getUserIdByScreenName = exports.getProfile = exports.parseProfile = void 0;
 const json_stable_stringify_1 = __importDefault(require("json-stable-stringify"));
 const api_1 = require("./api");
+function getAvatarOriginalSizeUrl(avatarUrl) {
+    return avatarUrl ? avatarUrl.replace('_normal', '') : undefined;
+}
 function parseProfile(user, isBlueVerified) {
     const profile = {
-        avatar: user.profile_image_url_https,
+        avatar: getAvatarOriginalSizeUrl(user.profile_image_url_https),
         banner: user.profile_banner_url,
         biography: user.description,
         followersCount: user.followers_count,
         followingCount: user.favourites_count,
         friendsCount: user.friends_count,
         mediaCount: user.media_count,
-        isPrivate: user.protected,
+        isPrivate: user.protected ?? false,
         isVerified: user.verified,
         likesCount: user.favourites_count,
         listedCount: user.listed_count,
@@ -42,17 +45,22 @@ async function getProfile(username, auth) {
     const params = new URLSearchParams();
     params.set('variables', (0, json_stable_stringify_1.default)({
         screen_name: username,
-        withHighlightedLabel: true,
+        withSafetyModeUserFields: true,
     }));
-    const features = (0, api_1.addApiFeatures)({
-        interactive_text_enabled: true,
-        longform_notetweets_inline_media_enabled: false,
-        responsive_web_text_conversations_enabled: false,
-        tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled: false,
-        vibe_api_enabled: false,
-    });
-    params.set('features', (0, json_stable_stringify_1.default)(features));
-    const res = await (0, api_1.requestApi)(`https://api.twitter.com/graphql/u7wQyGi6oExe8_TRWGMq4Q/UserResultByScreenNameQuery?${params.toString()}`, auth);
+    params.set('features', (0, json_stable_stringify_1.default)({
+        hidden_profile_likes_enabled: false,
+        hidden_profile_subscriptions_enabled: false,
+        responsive_web_graphql_exclude_directive_enabled: true,
+        verified_phone_label_enabled: false,
+        subscriptions_verification_info_is_identity_verified_enabled: false,
+        subscriptions_verification_info_verified_since_enabled: true,
+        highlights_tweets_tab_ui_enabled: true,
+        creator_subscriptions_tweet_preview_api_enabled: true,
+        responsive_web_graphql_skip_user_profile_image_extensions_enabled: false,
+        responsive_web_graphql_timeline_navigation_enabled: true,
+    }));
+    params.set('fieldToggles', (0, json_stable_stringify_1.default)({ withAuxiliaryUserLabels: false }));
+    const res = await (0, api_1.requestApi)(`https://twitter.com/i/api/graphql/G3KGOASz96M-Qu0nwmGXNg/UserByScreenName?${params.toString()}`, auth);
     if (!res.success) {
         return res;
     }
@@ -64,7 +72,7 @@ async function getProfile(username, auth) {
             err: new Error(errors[0].message),
         };
     }
-    const { result: user } = value.data.user_result;
+    const { result: user } = value.data.user;
     const { legacy } = user;
     if (user.rest_id == null || user.rest_id.length === 0) {
         return {
@@ -81,7 +89,7 @@ async function getProfile(username, auth) {
     }
     return {
         success: true,
-        value: parseProfile(user.legacy, user.isBlueVerified),
+        value: parseProfile(user.legacy, user.is_blue_verified),
     };
 }
 exports.getProfile = getProfile;

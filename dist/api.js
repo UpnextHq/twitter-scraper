@@ -58,7 +58,7 @@ async function requestApi(url, auth, method = 'GET') {
     if (!res.ok) {
         return {
             success: false,
-            err: new errors_1.ApiError(res, `Response status: ${res.status}`),
+            err: await errors_1.ApiError.fromResponse(res),
         };
     }
     const value = await res.json();

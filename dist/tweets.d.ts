@@ -1,5 +1,6 @@
 import { TwitterAuth } from './auth';
 import { QueryTweetsResponse } from './timeline-v1';
+import { TimelineEntryItemContentRaw } from './timeline-v2';
 export interface Mention {
     id: string;
     username?: string;
@@ -8,6 +9,7 @@ export interface Mention {
 export interface Photo {
     id: string;
     url: string;
+    alt_text: string | undefined;
 }
 export interface Video {
     id: string;
@@ -100,5 +102,8 @@ export declare function getTweetsByUserId(userId: string, maxTweets: number, aut
 export declare function getTweetWhere(tweets: AsyncIterable<Tweet>, query: TweetQuery): Promise<Tweet | null>;
 export declare function getTweetsWhere(tweets: AsyncIterable<Tweet>, query: TweetQuery): Promise<Tweet[]>;
 export declare function getLatestTweet(user: string, includeRetweets: boolean, max: number, auth: TwitterAuth): Promise<Tweet | null | void>;
+export interface TweetResultByRestId {
+    data?: TimelineEntryItemContentRaw;
+}
 export declare function getTweet(id: string, auth: TwitterAuth): Promise<Tweet | null>;
 //# sourceMappingURL=tweets.d.ts.map

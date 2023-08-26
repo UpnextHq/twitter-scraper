@@ -16,6 +16,7 @@ function parseMediaGroups(media) {
             photos.push({
                 id: m.id_str,
                 url: m.media_url_https,
+                alt_text: m.ext_alt_text,
             });
         }
         else if (m.type === 'video') {

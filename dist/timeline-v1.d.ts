@@ -36,6 +36,7 @@ export interface TimelineMediaExtendedRaw {
     type?: string;
     url?: string;
     video_info?: VideoInfo;
+    ext_alt_text: string | undefined;
 }
 export interface SearchResultRaw {
     rest_id?: string;
@@ -67,7 +68,7 @@ export interface TimelineResultRaw {
     rest_id?: string;
     __typename?: string;
     core?: {
-        user_result?: {
+        user_results?: {
             result?: {
                 is_blue_verified?: boolean;
                 legacy?: LegacyUserRaw;

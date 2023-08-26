@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.parseThreadedConversation = exports.parseTimelineTweetsV2 = exports.parseLegacyTweet = void 0;
+exports.parseThreadedConversation = exports.parseTimelineEntryItemContentRaw = exports.parseTimelineTweetsV2 = exports.parseLegacyTweet = void 0;
 const timeline_tweet_util_1 = require("./timeline-tweet-util");
 const type_util_1 = require("./type-util");
 function parseLegacyTweet(user, tweet) {
@@ -16,7 +16,7 @@ function parseLegacyTweet(user, tweet) {
             err: new Error('User was not found in the timeline object.'),
         };
     }
-    if (tweet.id_str == null) {
+    if (!tweet.id_str) {
         if (!tweet.conversation_id_str) {
             return {
                 success: false,
@@ -85,7 +85,7 @@ function parseLegacyTweet(user, tweet) {
         tw.isRetweet = true;
         tw.retweetedStatusId = retweetedStatusIdStr;
         if (retweetedStatusResult) {
-            const parsedResult = parseLegacyTweet(retweetedStatusResult?.core?.user_result?.result?.legacy, retweetedStatusResult?.legacy);
+            const parsedResult = parseLegacyTweet(retweetedStatusResult?.core?.user_results?.result?.legacy, retweetedStatusResult?.legacy);
             if (parsedResult.success) {
                 tw.retweetedStatus = parsedResult.tweet;
             }
@@ -112,7 +112,7 @@ function parseResult(result) {
     if (result?.legacy && noteTweetResultText) {
         result.legacy.full_text = noteTweetResultText;
     }
-    const tweetResult = parseLegacyTweet(result?.core?.user_result?.result?.legacy, result?.legacy);
+    const tweetResult = parseLegacyTweet(result?.core?.user_results?.result?.legacy, result?.legacy);
     if (!tweetResult.success) {
         return tweetResult;
     }
@@ -137,8 +137,8 @@ function parseResult(result) {
 function parseTimelineTweetsV2(timeline) {
     let cursor;
     const tweets = [];
-    const instructions = timeline.data?.user_result?.result?.timeline_response?.timeline
-        ?.instructions ?? [];
+    const instructions = timeline.data?.user?.result?.timeline_response?.timeline?.instructions ??
+        [];
     for (const instruction of instructions) {
         const entries = instruction.entries ?? [];
         for (const entry of entries) {
@@ -161,12 +161,13 @@ function parseTimelineTweetsV2(timeline) {
     return { tweets, next: cursor };
 }
 exports.parseTimelineTweetsV2 = parseTimelineTweetsV2;
-function parseAndPush(tweets, content, entryId, isConversation = false) {
+function parseTimelineEntryItemContentRaw(content, entryId, isConversation = false) {
     const result = content.tweetResult?.result;
     if (result?.__typename === 'Tweet') {
         if (result.legacy) {
-            const toReplace = isConversation ? 'tweet-' : 'conversation-';
-            result.legacy.id_str = entryId.replace(toReplace, '');
+            result.legacy.id_str = entryId
+                .replace('conversation-', '')
+                .replace('tweet-', '');
         }
         const tweetResult = parseResult(result);
         if (tweetResult.success) {
@@ -175,8 +176,16 @@ function parseAndPush(tweets, content, entryId, isConversation = false) {
                     tweetResult.tweet.isSelfThread = true;
                 }
             }
-            tweets.push(tweetResult.tweet);
+            return tweetResult.tweet;
         }
+    }
+    return null;
+}
+exports.parseTimelineEntryItemContentRaw = parseTimelineEntryItemContentRaw;
+function parseAndPush(tweets, content, entryId, isConversation = false) {
+    const tweet = parseTimelineEntryItemContentRaw(content, entryId, isConversation);
+    if (tweet) {
+        tweets.push(tweet);
     }
 }
 function parseThreadedConversation(conversation) {
