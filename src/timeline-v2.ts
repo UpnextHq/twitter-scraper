@@ -17,8 +17,12 @@ export interface TimelineUserResultRaw {
 }
 
 export interface TimelineEntryItemContentRaw {
+  itemType?: string;
   tweetDisplayType?: string;
   tweetResult?: {
+    result?: TimelineResultRaw;
+  };
+  tweet_results?: {
     result?: TimelineResultRaw;
   };
   userDisplayType?: string;
@@ -37,7 +41,7 @@ export interface TimelineEntryRaw {
         content?: TimelineEntryItemContentRaw;
       };
     }[];
-    content?: TimelineEntryItemContentRaw;
+    itemContent?: TimelineEntryItemContentRaw;
   };
 }
 
@@ -70,7 +74,7 @@ export interface SearchEntryRaw {
 }
 
 export interface TimelineInstruction {
-  entries: TimelineEntryRaw[];
+  entries?: TimelineEntryRaw[];
   entry?: TimelineEntryRaw;
   type?: string;
 }
@@ -79,9 +83,9 @@ export interface TimelineV2 {
   data?: {
     user?: {
       result?: {
-        timeline_response?: {
+        timeline_v2?: {
           timeline?: {
-            instructions: TimelineInstruction[];
+            instructions?: TimelineInstruction[];
           };
         };
       };
@@ -91,7 +95,7 @@ export interface TimelineV2 {
 
 export interface ThreadedConversation {
   data?: {
-    timeline_response?: {
+    threaded_conversation_with_injections_v2?: {
       instructions?: TimelineInstruction[];
     };
   };
@@ -268,11 +272,11 @@ function parseResult(result?: TimelineResultRaw): ParseTweetResult {
 export function parseTimelineTweetsV2(
   timeline: TimelineV2,
 ): QueryTweetsResponse {
-  let cursor: string | undefined;
+  let bottomCursor: string | undefined;
+  let topCursor: string | undefined;
   const tweets: Tweet[] = [];
   const instructions =
-    timeline.data?.user?.result?.timeline_response?.timeline?.instructions ??
-    [];
+    timeline.data?.user?.result?.timeline_v2?.timeline?.instructions ?? [];
   for (const instruction of instructions) {
     const entries = instruction.entries ?? [];
 
@@ -281,7 +285,10 @@ export function parseTimelineTweetsV2(
       if (!entryContent) continue;
 
       if (entryContent.cursorType === 'Bottom') {
-        cursor = entryContent.value;
+        bottomCursor = entryContent.value;
+        continue;
+      } else if (entryContent.cursorType === 'Top') {
+        topCursor = entryContent.value;
         continue;
       }
 
@@ -290,13 +297,13 @@ export function parseTimelineTweetsV2(
         continue;
       }
 
-      if (entryContent.content) {
-        parseAndPush(tweets, entryContent.content, idStr);
+      if (entryContent.itemContent) {
+        parseAndPush(tweets, entryContent.itemContent, idStr);
       }
     }
   }
 
-  return { tweets, next: cursor };
+  return { tweets, next: bottomCursor, previous: topCursor };
 }
 
 export function parseTimelineEntryItemContentRaw(
@@ -304,7 +311,7 @@ export function parseTimelineEntryItemContentRaw(
   entryId: string,
   isConversation = false,
 ) {
-  const result = content.tweetResult?.result;
+  const result = content.tweet_results?.result ?? content.tweetResult?.result;
   if (result?.__typename === 'Tweet') {
     if (result.legacy) {
       result.legacy.id_str = entryId
@@ -348,12 +355,14 @@ export function parseThreadedConversation(
   conversation: ThreadedConversation,
 ): Tweet[] {
   const tweets: Tweet[] = [];
-  const instructions = conversation.data?.timeline_response?.instructions ?? [];
+  const instructions =
+    conversation.data?.threaded_conversation_with_injections_v2?.instructions ??
+    [];
 
   for (const instruction of instructions) {
     const entries = instruction.entries ?? [];
     for (const entry of entries) {
-      const entryContent = entry.content?.content;
+      const entryContent = entry.content?.itemContent;
       if (entryContent) {
         parseAndPush(tweets, entryContent, entry.entryId, true);
       }

@@ -10,17 +10,24 @@ import {
   searchProfiles,
   searchTweets,
 } from './search';
+import {
+  fetchProfileFollowing,
+  fetchProfileFollowers,
+  getFollowing,
+  getFollowers,
+} from './relationships';
 import { QueryProfilesResponse, QueryTweetsResponse } from './timeline-v1';
 import { getTrends } from './trends';
 import {
   Tweet,
-  getTweet,
+  getTweetAnonymous,
   getTweets,
   getLatestTweet,
   getTweetWhere,
   getTweetsWhere,
   getTweetsByUserId,
   TweetQuery,
+  getTweet,
 } from './tweets';
 import fetch from 'cross-fetch';
 
@@ -152,6 +159,62 @@ export class Scraper {
   }
 
   /**
+   * Fetch the profiles a user is following
+   * @param userId The user whose following should be returned
+   * @param maxProfiles The maximum number of profiles to return.
+   * @returns An {@link AsyncGenerator} of following profiles for the provided user.
+   */
+  public getFollowing(
+    userId: string,
+    maxProfiles: number,
+  ): AsyncGenerator<Profile, void> {
+    return getFollowing(userId, maxProfiles, this.auth);
+  }
+
+  /**
+   * Fetch the profiles that follow a user
+   * @param userId The user whose followers should be returned
+   * @param maxProfiles The maximum number of profiles to return.
+   * @returns An {@link AsyncGenerator} of profiles following the provided user.
+   */
+  public getFollowers(
+    userId: string,
+    maxProfiles: number,
+  ): AsyncGenerator<Profile, void> {
+    return getFollowers(userId, maxProfiles, this.auth);
+  }
+
+  /**
+   * Fetches following profiles from Twitter.
+   * @param userId The user whose following should be returned
+   * @param maxProfiles The maximum number of profiles to return.
+   * @param cursor The search cursor, which can be passed into further requests for more results.
+   * @returns A page of results, containing a cursor that can be used in further requests.
+   */
+  public fetchProfileFollowing(
+    userId: string,
+    maxProfiles: number,
+    cursor?: string,
+  ): Promise<QueryProfilesResponse> {
+    return fetchProfileFollowing(userId, maxProfiles, this.auth, cursor);
+  }
+
+  /**
+   * Fetches profile followers from Twitter.
+   * @param userId The user whose following should be returned
+   * @param maxProfiles The maximum number of profiles to return.
+   * @param cursor The search cursor, which can be passed into further requests for more results.
+   * @returns A page of results, containing a cursor that can be used in further requests.
+   */
+  public fetchProfileFollowers(
+    userId: string,
+    maxProfiles: number,
+    cursor?: string,
+  ): Promise<QueryProfilesResponse> {
+    return fetchProfileFollowers(userId, maxProfiles, this.auth, cursor);
+  }
+
+  /**
    * Fetches the current trends from Twitter.
    * @returns The current list of trends.
    */
@@ -248,7 +311,11 @@ export class Scraper {
    * @returns The {@link Tweet} object, or `null` if it couldn't be fetched.
    */
   public getTweet(id: string): Promise<Tweet | null> {
-    return getTweet(id, this.auth);
+    if (this.auth instanceof TwitterUserAuth) {
+      return getTweet(id, this.auth);
+    } else {
+      return getTweetAnonymous(id, this.auth);
+    }
   }
 
   public async getThread(
