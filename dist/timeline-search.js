@@ -4,7 +4,8 @@ exports.parseSearchTimelineUsers = exports.parseSearchTimelineTweets = void 0;
 const profile_1 = require("./profile");
 const timeline_v2_1 = require("./timeline-v2");
 function parseSearchTimelineTweets(timeline) {
-    let cursor;
+    let bottomCursor;
+    let topCursor;
     const tweets = [];
     const instructions = timeline.data?.search_by_raw_query?.search_timeline?.timeline
         ?.instructions ?? [];
@@ -12,7 +13,11 @@ function parseSearchTimelineTweets(timeline) {
         if (instruction.type === 'TimelineAddEntries' ||
             instruction.type === 'TimelineReplaceEntry') {
             if (instruction.entry?.content?.cursorType === 'Bottom') {
-                cursor = instruction.entry.content.value;
+                bottomCursor = instruction.entry.content.value;
+                continue;
+            }
+            else if (instruction.entry?.content?.cursorType === 'Top') {
+                topCursor = instruction.entry.content.value;
                 continue;
             }
             const entries = instruction.entries ?? [];
@@ -32,16 +37,20 @@ function parseSearchTimelineTweets(timeline) {
                     }
                 }
                 else if (entry.content?.cursorType === 'Bottom') {
-                    cursor = entry.content.value;
+                    bottomCursor = entry.content.value;
+                }
+                else if (entry.content?.cursorType === 'Top') {
+                    topCursor = entry.content.value;
                 }
             }
         }
     }
-    return { tweets, next: cursor };
+    return { tweets, next: bottomCursor, previous: topCursor };
 }
 exports.parseSearchTimelineTweets = parseSearchTimelineTweets;
 function parseSearchTimelineUsers(timeline) {
-    let cursor;
+    let bottomCursor;
+    let topCursor;
     const profiles = [];
     const instructions = timeline.data?.search_by_raw_query?.search_timeline?.timeline
         ?.instructions ?? [];
@@ -49,7 +58,11 @@ function parseSearchTimelineUsers(timeline) {
         if (instruction.type === 'TimelineAddEntries' ||
             instruction.type === 'TimelineReplaceEntry') {
             if (instruction.entry?.content?.cursorType === 'Bottom') {
-                cursor = instruction.entry.content.value;
+                bottomCursor = instruction.entry.content.value;
+                continue;
+            }
+            else if (instruction.entry?.content?.cursorType === 'Top') {
+                topCursor = instruction.entry.content.value;
                 continue;
             }
             const entries = instruction.entries ?? [];
@@ -66,12 +79,15 @@ function parseSearchTimelineUsers(timeline) {
                     }
                 }
                 else if (entry.content?.cursorType === 'Bottom') {
-                    cursor = entry.content.value;
+                    bottomCursor = entry.content.value;
+                }
+                else if (entry.content?.cursorType === 'Top') {
+                    topCursor = entry.content.value;
                 }
             }
         }
     }
-    return { profiles, next: cursor };
+    return { profiles, next: bottomCursor, previous: topCursor };
 }
 exports.parseSearchTimelineUsers = parseSearchTimelineUsers;
 //# sourceMappingURL=timeline-search.js.map

@@ -135,10 +135,10 @@ function parseResult(result) {
     return tweetResult;
 }
 function parseTimelineTweetsV2(timeline) {
-    let cursor;
+    let bottomCursor;
+    let topCursor;
     const tweets = [];
-    const instructions = timeline.data?.user?.result?.timeline_response?.timeline?.instructions ??
-        [];
+    const instructions = timeline.data?.user?.result?.timeline_v2?.timeline?.instructions ?? [];
     for (const instruction of instructions) {
         const entries = instruction.entries ?? [];
         for (const entry of entries) {
@@ -146,23 +146,27 @@ function parseTimelineTweetsV2(timeline) {
             if (!entryContent)
                 continue;
             if (entryContent.cursorType === 'Bottom') {
-                cursor = entryContent.value;
+                bottomCursor = entryContent.value;
+                continue;
+            }
+            else if (entryContent.cursorType === 'Top') {
+                topCursor = entryContent.value;
                 continue;
             }
             const idStr = entry.entryId;
             if (!idStr.startsWith('tweet')) {
                 continue;
             }
-            if (entryContent.content) {
-                parseAndPush(tweets, entryContent.content, idStr);
+            if (entryContent.itemContent) {
+                parseAndPush(tweets, entryContent.itemContent, idStr);
             }
         }
     }
-    return { tweets, next: cursor };
+    return { tweets, next: bottomCursor, previous: topCursor };
 }
 exports.parseTimelineTweetsV2 = parseTimelineTweetsV2;
 function parseTimelineEntryItemContentRaw(content, entryId, isConversation = false) {
-    const result = content.tweetResult?.result;
+    const result = content.tweet_results?.result ?? content.tweetResult?.result;
     if (result?.__typename === 'Tweet') {
         if (result.legacy) {
             result.legacy.id_str = entryId
@@ -190,11 +194,12 @@ function parseAndPush(tweets, content, entryId, isConversation = false) {
 }
 function parseThreadedConversation(conversation) {
     const tweets = [];
-    const instructions = conversation.data?.timeline_response?.instructions ?? [];
+    const instructions = conversation.data?.threaded_conversation_with_injections_v2?.instructions ??
+        [];
     for (const instruction of instructions) {
         const entries = instruction.entries ?? [];
         for (const entry of entries) {
-            const entryContent = entry.content?.content;
+            const entryContent = entry.content?.itemContent;
             if (entryContent) {
                 parseAndPush(tweets, entryContent, entry.entryId, true);
             }

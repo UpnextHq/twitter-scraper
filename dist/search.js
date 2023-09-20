@@ -18,7 +18,7 @@ var SearchMode;
     SearchMode[SearchMode["Photos"] = 2] = "Photos";
     SearchMode[SearchMode["Videos"] = 3] = "Videos";
     SearchMode[SearchMode["Users"] = 4] = "Users";
-})(SearchMode = exports.SearchMode || (exports.SearchMode = {}));
+})(SearchMode || (exports.SearchMode = SearchMode = {}));
 function searchTweets(query, maxTweets, searchMode, auth) {
     return (0, timeline_async_1.getTweetTimeline)(query, maxTweets, (q, mt, c) => {
         return fetchSearchTweets(q, mt, searchMode, auth, c);

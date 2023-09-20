@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.reconstructTweetHtml = exports.parseMediaGroups = void 0;
 const type_util_1 = require("./type-util");
 const reHashtag = /\B(\#\S+\b)/g;
+const reCashtag = /\B(\$\S+\b)/g;
 const reTwitterUrl = /https:(\/\/t\.co\/([A-Za-z0-9]|[A-Za-z]){10})/g;
 const reUsername = /\B(\@\S{1,15}\b)/g;
 function parseMediaGroups(media) {
@@ -60,6 +61,7 @@ function reconstructTweetHtml(tweet, photos, videos) {
     // HTML parsing with regex :)
     let html = tweet.full_text ?? '';
     html = html.replace(reHashtag, linkHashtagHtml);
+    html = html.replace(reCashtag, linkCashtagHtml);
     html = html.replace(reUsername, linkUsernameHtml);
     html = html.replace(reTwitterUrl, unwrapTcoUrlHtml(tweet, media));
     for (const { url } of photos) {
@@ -81,8 +83,11 @@ exports.reconstructTweetHtml = reconstructTweetHtml;
 function linkHashtagHtml(hashtag) {
     return `<a href="https://twitter.com/hashtag/${hashtag.replace('#', '')}">${hashtag}</a>`;
 }
+function linkCashtagHtml(cashtag) {
+    return `<a href="https://twitter.com/search?q=%24${cashtag.replace('$', '')}">${cashtag}</a>`;
+}
 function linkUsernameHtml(username) {
-    return `<a href="https://twitter.com/${username[0].replace('@', '')}">${username[0]}</a>`;
+    return `<a href="https://twitter.com/${username.replace('@', '')}">${username}</a>`;
 }
 function unwrapTcoUrlHtml(tweet, foundedMedia) {
     return function (tco) {

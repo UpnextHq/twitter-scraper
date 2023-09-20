@@ -9,7 +9,6 @@ exports.bearerToken = 'AAAAAAAAAAAAAAAAAAAAAFQODgEAAAAAVHTp76lzh3rFzcHbmHVvQxYYp
 /**
  * Used internally to send HTTP requests to the Twitter API.
  * @internal
- *
  * @param url - The URL to send the request to.
  * @param auth - The instance of {@link TwitterAuth} that will be used to authorize this request.
  * @param method - The HTTP method used when sending this request.
@@ -71,9 +70,7 @@ async function requestApi(url, auth, method = 'GET') {
     }
 }
 exports.requestApi = requestApi;
-/**
- * @internal
- */
+/** @internal */
 function addApiFeatures(o) {
     return {
         ...o,

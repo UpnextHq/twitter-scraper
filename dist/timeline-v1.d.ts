@@ -209,11 +209,14 @@ export type ParseTweetResult = {
     err: Error;
 };
 /**
- * A paginated tweets API response. The `next` field can be used to fetch the next page of results.
+ * A paginated tweets API response. The `next` field can be used to fetch the next page of results,
+ * and the `previous` can be used to fetch the previous results (or results created after the
+ * inital request)
  */
 export interface QueryTweetsResponse {
     tweets: Tweet[];
     next?: string;
+    previous?: string;
 }
 export declare function parseTimelineTweetsV1(timeline: TimelineV1): QueryTweetsResponse;
 /**
@@ -222,6 +225,7 @@ export declare function parseTimelineTweetsV1(timeline: TimelineV1): QueryTweets
 export interface QueryProfilesResponse {
     profiles: Profile[];
     next?: string;
+    previous?: string;
 }
 export declare function parseUsers(timeline: TimelineV1): QueryProfilesResponse;
 //# sourceMappingURL=timeline-v1.d.ts.map

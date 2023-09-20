@@ -6,6 +6,7 @@ const auth_1 = require("./auth");
 const auth_user_1 = require("./auth-user");
 const profile_1 = require("./profile");
 const search_1 = require("./search");
+const relationships_1 = require("./relationships");
 const trends_1 = require("./trends");
 const tweets_1 = require("./tweets");
 const twUrl = 'https://twitter.com';
@@ -94,6 +95,44 @@ class Scraper {
         return (0, search_1.fetchSearchProfiles)(query, maxProfiles, this.auth, cursor);
     }
     /**
+     * Fetch the profiles a user is following
+     * @param userId The user whose following should be returned
+     * @param maxProfiles The maximum number of profiles to return.
+     * @returns An {@link AsyncGenerator} of following profiles for the provided user.
+     */
+    getFollowing(userId, maxProfiles) {
+        return (0, relationships_1.getFollowing)(userId, maxProfiles, this.auth);
+    }
+    /**
+     * Fetch the profiles that follow a user
+     * @param userId The user whose followers should be returned
+     * @param maxProfiles The maximum number of profiles to return.
+     * @returns An {@link AsyncGenerator} of profiles following the provided user.
+     */
+    getFollowers(userId, maxProfiles) {
+        return (0, relationships_1.getFollowers)(userId, maxProfiles, this.auth);
+    }
+    /**
+     * Fetches following profiles from Twitter.
+     * @param userId The user whose following should be returned
+     * @param maxProfiles The maximum number of profiles to return.
+     * @param cursor The search cursor, which can be passed into further requests for more results.
+     * @returns A page of results, containing a cursor that can be used in further requests.
+     */
+    fetchProfileFollowing(userId, maxProfiles, cursor) {
+        return (0, relationships_1.fetchProfileFollowing)(userId, maxProfiles, this.auth, cursor);
+    }
+    /**
+     * Fetches profile followers from Twitter.
+     * @param userId The user whose following should be returned
+     * @param maxProfiles The maximum number of profiles to return.
+     * @param cursor The search cursor, which can be passed into further requests for more results.
+     * @returns A page of results, containing a cursor that can be used in further requests.
+     */
+    fetchProfileFollowers(userId, maxProfiles, cursor) {
+        return (0, relationships_1.fetchProfileFollowers)(userId, maxProfiles, this.auth, cursor);
+    }
+    /**
      * Fetches the current trends from Twitter.
      * @returns The current list of trends.
      */
@@ -171,7 +210,12 @@ class Scraper {
      * @returns The {@link Tweet} object, or `null` if it couldn't be fetched.
      */
     getTweet(id) {
-        return (0, tweets_1.getTweet)(id, this.auth);
+        if (this.auth instanceof auth_user_1.TwitterUserAuth) {
+            return (0, tweets_1.getTweet)(id, this.auth);
+        }
+        else {
+            return (0, tweets_1.getTweetAnonymous)(id, this.auth);
+        }
     }
     async getThread(id) {
         const tweet = await this.getTweet(id);

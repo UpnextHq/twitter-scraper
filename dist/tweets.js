@@ -1,14 +1,11 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getTweet = exports.getLatestTweet = exports.getTweetsWhere = exports.getTweetWhere = exports.getTweetsByUserId = exports.getTweets = exports.fetchTweets = exports.features = void 0;
+exports.getTweetAnonymous = exports.getTweet = exports.getLatestTweet = exports.getTweetsWhere = exports.getTweetWhere = exports.getTweetsByUserId = exports.getTweets = exports.fetchTweets = exports.features = void 0;
 const api_1 = require("./api");
 const profile_1 = require("./profile");
 const timeline_v2_1 = require("./timeline-v2");
 const timeline_async_1 = require("./timeline-async");
-const json_stable_stringify_1 = __importDefault(require("json-stable-stringify"));
+const api_data_1 = require("./api-data");
 exports.features = (0, api_1.addApiFeatures)({
     interactive_text_enabled: true,
     longform_notetweets_inline_media_enabled: false,
@@ -20,42 +17,14 @@ async function fetchTweets(userId, maxTweets, cursor, auth) {
     if (maxTweets > 200) {
         maxTweets = 200;
     }
-    const variables = {
-        userId: userId,
-        count: maxTweets,
-        includePromotedContent: false,
-        withQuickPromoteEligibilityTweetFields: true,
-        withVoice: true,
-        withV2Timeline: true,
-    };
+    const userTweetsRequest = api_data_1.apiRequestFactory.createUserTweetsRequest();
+    userTweetsRequest.variables.userId = userId;
+    userTweetsRequest.variables.count = maxTweets;
+    userTweetsRequest.variables.includePromotedContent = false; // true on the website
     if (cursor != null && cursor != '') {
-        variables['cursor'] = cursor;
+        userTweetsRequest.variables['cursor'] = cursor;
     }
-    const params = new URLSearchParams();
-    params.set('variables', (0, json_stable_stringify_1.default)(variables));
-    params.set('features', (0, json_stable_stringify_1.default)({
-        rweb_lists_timeline_redesign_enabled: true,
-        responsive_web_graphql_exclude_directive_enabled: true,
-        verified_phone_label_enabled: false,
-        creator_subscriptions_tweet_preview_api_enabled: true,
-        responsive_web_graphql_timeline_navigation_enabled: true,
-        responsive_web_graphql_skip_user_profile_image_extensions_enabled: false,
-        tweetypie_unmention_optimization_enabled: true,
-        responsive_web_edit_tweet_api_enabled: true,
-        graphql_is_translatable_rweb_tweet_is_translatable_enabled: true,
-        view_counts_everywhere_api_enabled: true,
-        longform_notetweets_consumption_enabled: true,
-        responsive_web_twitter_article_tweet_consumption_enabled: false,
-        tweet_awards_web_tipping_enabled: false,
-        freedom_of_speech_not_reach_fetch_enabled: true,
-        standardized_nudges_misinfo: true,
-        tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled: true,
-        longform_notetweets_rich_text_read_enabled: true,
-        longform_notetweets_inline_media_enabled: true,
-        responsive_web_media_download_video_enabled: false,
-        responsive_web_enhance_cards_enabled: false,
-    }));
-    const res = await (0, api_1.requestApi)(`https://twitter.com/i/api/graphql/XicnWRbyQ3WgVY__VataBQ/UserTweets?${params.toString()}`, auth);
+    const res = await (0, api_1.requestApi)(userTweetsRequest.toRequestUrl(), auth);
     if (!res.success) {
         throw res.err;
     }
@@ -119,36 +88,23 @@ async function getLatestTweet(user, includeRetweets, max, auth) {
 }
 exports.getLatestTweet = getLatestTweet;
 async function getTweet(id, auth) {
-    const variables = {
-        tweetId: id,
-        withCommunity: false,
-        includePromotedContent: false,
-        withVoice: false,
-    };
-    const params = new URLSearchParams();
-    params.set('features', (0, json_stable_stringify_1.default)({
-        creator_subscriptions_tweet_preview_api_enabled: true,
-        tweetypie_unmention_optimization_enabled: true,
-        responsive_web_edit_tweet_api_enabled: true,
-        graphql_is_translatable_rweb_tweet_is_translatable_enabled: true,
-        view_counts_everywhere_api_enabled: true,
-        longform_notetweets_consumption_enabled: true,
-        responsive_web_twitter_article_tweet_consumption_enabled: false,
-        tweet_awards_web_tipping_enabled: false,
-        freedom_of_speech_not_reach_fetch_enabled: true,
-        standardized_nudges_misinfo: true,
-        tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled: true,
-        longform_notetweets_rich_text_read_enabled: true,
-        longform_notetweets_inline_media_enabled: true,
-        responsive_web_graphql_exclude_directive_enabled: true,
-        verified_phone_label_enabled: false,
-        responsive_web_media_download_video_enabled: false,
-        responsive_web_graphql_skip_user_profile_image_extensions_enabled: false,
-        responsive_web_graphql_timeline_navigation_enabled: true,
-        responsive_web_enhance_cards_enabled: false,
-    }));
-    params.set('variables', (0, json_stable_stringify_1.default)(variables));
-    const res = await (0, api_1.requestApi)(`https://twitter.com/i/api/graphql/0hWvDhmW8YQ-S_ib3azIrw/TweetResultByRestId?${params.toString()}`, auth);
+    const tweetDetailRequest = api_data_1.apiRequestFactory.createTweetDetailRequest();
+    tweetDetailRequest.variables.focalTweetId = id;
+    const res = await (0, api_1.requestApi)(tweetDetailRequest.toRequestUrl(), auth);
+    if (!res.success) {
+        throw res.err;
+    }
+    if (!res.value) {
+        return null;
+    }
+    const tweets = (0, timeline_v2_1.parseThreadedConversation)(res.value);
+    return tweets.find((tweet) => tweet.id === id) ?? null;
+}
+exports.getTweet = getTweet;
+async function getTweetAnonymous(id, auth) {
+    const tweetResultByRestIdRequest = api_data_1.apiRequestFactory.createTweetResultByRestIdRequest();
+    tweetResultByRestIdRequest.variables.tweetId = id;
+    const res = await (0, api_1.requestApi)(tweetResultByRestIdRequest.toRequestUrl(), auth);
     if (!res.success) {
         throw res.err;
     }
@@ -157,5 +113,5 @@ async function getTweet(id, auth) {
     }
     return (0, timeline_v2_1.parseTimelineEntryItemContentRaw)(res.value.data, id);
 }
-exports.getTweet = getTweet;
+exports.getTweetAnonymous = getTweetAnonymous;
 //# sourceMappingURL=tweets.js.map

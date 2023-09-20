@@ -100,7 +100,8 @@ function parseTimelineTweet(timeline, id) {
     return { success: true, tweet: tw };
 }
 function parseTimelineTweetsV1(timeline) {
-    let cursor;
+    let bottomCursor;
+    let topCursor;
     let pinnedTweet;
     let orderedTweets = [];
     for (const instruction of timeline.timeline?.instructions ?? []) {
@@ -124,13 +125,19 @@ function parseTimelineTweetsV1(timeline) {
             }
             const operation = content?.operation;
             if (operation?.cursor?.cursorType === 'Bottom') {
-                cursor = operation?.cursor?.value;
+                bottomCursor = operation?.cursor?.value;
+            }
+            else if (operation?.cursor?.cursorType === 'Top') {
+                topCursor = operation?.cursor?.value;
             }
         }
         // Handle replace instruction
         const operation = replaceEntry?.entry?.content?.operation;
         if (operation?.cursor?.cursorType === 'Bottom') {
-            cursor = operation.cursor.value;
+            bottomCursor = operation.cursor.value;
+        }
+        else if (operation?.cursor?.cursorType === 'Top') {
+            topCursor = operation.cursor.value;
         }
     }
     if (pinnedTweet != null && orderedTweets.length > 0) {
@@ -138,7 +145,8 @@ function parseTimelineTweetsV1(timeline) {
     }
     return {
         tweets: orderedTweets,
-        next: cursor,
+        next: bottomCursor,
+        previous: topCursor,
     };
 }
 exports.parseTimelineTweetsV1 = parseTimelineTweetsV1;
@@ -153,7 +161,8 @@ function parseUsers(timeline) {
         const user = (0, profile_1.parseProfile)(legacy);
         users.set(id, user);
     }
-    let cursor;
+    let bottomCursor;
+    let topCursor;
     const orderedProfiles = [];
     for (const instruction of timeline.timeline?.instructions ?? []) {
         for (const entry of instruction.addEntries?.entries ?? []) {
@@ -164,17 +173,24 @@ function parseUsers(timeline) {
             }
             const operation = entry.content?.operation;
             if (operation?.cursor?.cursorType === 'Bottom') {
-                cursor = operation?.cursor?.value;
+                bottomCursor = operation?.cursor?.value;
+            }
+            else if (operation?.cursor?.cursorType === 'Top') {
+                topCursor = operation?.cursor?.value;
             }
         }
         const operation = instruction.replaceEntry?.entry?.content?.operation;
         if (operation?.cursor?.cursorType === 'Bottom') {
-            cursor = operation.cursor.value;
+            bottomCursor = operation.cursor.value;
+        }
+        else if (operation?.cursor?.cursorType === 'Top') {
+            topCursor = operation.cursor.value;
         }
     }
     return {
         profiles: orderedProfiles,
-        next: cursor,
+        next: bottomCursor,
+        previous: topCursor,
     };
 }
 exports.parseUsers = parseUsers;

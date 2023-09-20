@@ -106,4 +106,5 @@ export interface TweetResultByRestId {
     data?: TimelineEntryItemContentRaw;
 }
 export declare function getTweet(id: string, auth: TwitterAuth): Promise<Tweet | null>;
+export declare function getTweetAnonymous(id: string, auth: TwitterAuth): Promise<Tweet | null>;
 //# sourceMappingURL=tweets.d.ts.map

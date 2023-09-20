@@ -33,12 +33,6 @@ export declare class Scraper {
      */
     constructor(options?: Partial<ScraperOptions> | undefined);
     /**
-     * Initializes auth properties using a guest token.
-     * Used when creating a new instance of this class, and when logging out.
-     * @internal
-     */
-    private useGuestAuth;
-    /**
      * Fetches a Twitter profile.
      * @param username The Twitter username of the profile to fetch, without an `@` at the beginning.
      * @returns The requested {@link Profile}.
@@ -84,6 +78,36 @@ export declare class Scraper {
      * @returns A page of results, containing a cursor that can be used in further requests.
      */
     fetchSearchProfiles(query: string, maxProfiles: number, cursor?: string): Promise<QueryProfilesResponse>;
+    /**
+     * Fetch the profiles a user is following
+     * @param userId The user whose following should be returned
+     * @param maxProfiles The maximum number of profiles to return.
+     * @returns An {@link AsyncGenerator} of following profiles for the provided user.
+     */
+    getFollowing(userId: string, maxProfiles: number): AsyncGenerator<Profile, void>;
+    /**
+     * Fetch the profiles that follow a user
+     * @param userId The user whose followers should be returned
+     * @param maxProfiles The maximum number of profiles to return.
+     * @returns An {@link AsyncGenerator} of profiles following the provided user.
+     */
+    getFollowers(userId: string, maxProfiles: number): AsyncGenerator<Profile, void>;
+    /**
+     * Fetches following profiles from Twitter.
+     * @param userId The user whose following should be returned
+     * @param maxProfiles The maximum number of profiles to return.
+     * @param cursor The search cursor, which can be passed into further requests for more results.
+     * @returns A page of results, containing a cursor that can be used in further requests.
+     */
+    fetchProfileFollowing(userId: string, maxProfiles: number, cursor?: string): Promise<QueryProfilesResponse>;
+    /**
+     * Fetches profile followers from Twitter.
+     * @param userId The user whose following should be returned
+     * @param maxProfiles The maximum number of profiles to return.
+     * @param cursor The search cursor, which can be passed into further requests for more results.
+     * @returns A page of results, containing a cursor that can be used in further requests.
+     */
+    fetchProfileFollowers(userId: string, maxProfiles: number, cursor?: string): Promise<QueryProfilesResponse>;
     /**
      * Fetches the current trends from Twitter.
      * @returns The current list of trends.

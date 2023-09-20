@@ -7,8 +7,12 @@ export interface TimelineUserResultRaw {
     is_blue_verified?: boolean;
 }
 export interface TimelineEntryItemContentRaw {
+    itemType?: string;
     tweetDisplayType?: string;
     tweetResult?: {
+        result?: TimelineResultRaw;
+    };
+    tweet_results?: {
         result?: TimelineResultRaw;
     };
     userDisplayType?: string;
@@ -26,7 +30,7 @@ export interface TimelineEntryRaw {
                 content?: TimelineEntryItemContentRaw;
             };
         }[];
-        content?: TimelineEntryItemContentRaw;
+        itemContent?: TimelineEntryItemContentRaw;
     };
 }
 export interface SearchEntryItemContentRaw {
@@ -56,7 +60,7 @@ export interface SearchEntryRaw {
     };
 }
 export interface TimelineInstruction {
-    entries: TimelineEntryRaw[];
+    entries?: TimelineEntryRaw[];
     entry?: TimelineEntryRaw;
     type?: string;
 }
@@ -64,9 +68,9 @@ export interface TimelineV2 {
     data?: {
         user?: {
             result?: {
-                timeline_response?: {
+                timeline_v2?: {
                     timeline?: {
-                        instructions: TimelineInstruction[];
+                        instructions?: TimelineInstruction[];
                     };
                 };
             };
@@ -75,7 +79,7 @@ export interface TimelineV2 {
 }
 export interface ThreadedConversation {
     data?: {
-        timeline_response?: {
+        threaded_conversation_with_injections_v2?: {
             instructions?: TimelineInstruction[];
         };
     };
